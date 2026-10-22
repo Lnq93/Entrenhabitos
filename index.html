@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrenhábitos — Prototipo Interactivo R4 (Método de Adherencia)</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="mode-mobile">
+
+  <!-- ==========================================================================
+       HEADER PRINCIPAL Y CONTROLES GLOBALES
+       ========================================================================== -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <div class="brand-logo-icon">⚡</div>
+        <div>
+          <h1 class="brand-title">ENTRENHÁBITOS <span class="brand-badge">Simulador App + Coach</span></h1>
+        </div>
+      </div>
+
+      <!-- Selector de Modo / Rol (App Celular, Dual, Alumno Web, Coach) -->
+      <div class="role-switcher" role="tablist">
+        <button id="btn-role-mobile" class="role-btn active" data-role="mobile" role="tab" aria-selected="true">
+          📱 App Celular
+        </button>
+        <button id="btn-role-split" class="role-btn" data-role="split" role="tab" aria-selected="false">
+          📱+📋 Celular + Coach
+        </button>
+        <button id="btn-role-student" class="role-btn" data-role="student" role="tab" aria-selected="false">
+          🏋️‍♂️ Vista Alumno (Web)
+        </button>
+        <button id="btn-role-coach" class="role-btn" data-role="coach" role="tab" aria-selected="false">
+          📋 Vista Coach (Panel)
+        </button>
+      </div>
+
+      <!-- Acciones de Cabecera: Perfil, Racha y Reset -->
+      <div class="header-actions">
+        <div class="profile-select-wrapper">
+          <span class="profile-select-label">Alumno:</span>
+          <select id="global-profile-select" class="profile-dropdown" aria-label="Seleccionar perfil de alumno">
+            <option value="alumno_martin">Martín Rossi (Todo o Nada)</option>
+            <option value="alumno_lucia">Lucía Méndez (Fatiga Mental)</option>
+            <option value="alumno_carlos">Carlos Gómez (Turnos Caóticos)</option>
+            <option value="alumno_sofia">Sofía Pereira (Nuevo Ingreso)</option>
+          </select>
+        </div>
+
+        <div id="header-streak-badge" class="streak-pill" title="Racha protegida: contabiliza versiones mínimas y no se pierde por 1 tropiezo">
+          🔥 <span id="header-streak-text">4 semanas</span>
+        </div>
+
+        <button id="btn-reset-demo" class="btn-reset-demo" title="Restaurar los 4 perfiles y datos de demostración a su estado inicial">
+          ↺ Reiniciar Demo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       CONTENIDO PRINCIPAL
+       ========================================================================== -->
+  <main class="main-container">
+    <div class="workspace-simulator-grid">
+
+    <!-- ========================================================================
+         VISTA 1: ALUMNO / ENTRENADO (CON CHASIS DE SMARTPHONE EN MODO CELULAR)
+         ======================================================================== -->
+    <div id="view-student" class="view-section active">
+      <div class="phone-frame-wrapper">
+        <div class="phone-screen-inner">
+
+          <!-- Barra de estado iOS/Android del Simulador Celular -->
+          <div class="phone-status-bar phone-only-chrome">
+            <span id="phone-clock-time">09:41</span>
+            <div class="phone-dynamic-island">
+              <div class="phone-camera-dot"></div>
+            </div>
+            <span>5G &nbsp; 🔋 100%</span>
+          </div>
+
+          <!-- Cabecera Nativa dentro de la App Celular -->
+          <div class="phone-app-topbar phone-only-chrome">
+            <div class="phone-user-info">
+              <div id="phone-header-avatar" class="phone-user-avatar">👨‍💼</div>
+              <div>
+                <div id="phone-header-name" class="phone-user-name">Martín Rossi</div>
+                <div id="phone-header-archetype" class="phone-user-archetype">Perfeccionista / Todo o Nada</div>
+              </div>
+            </div>
+            <button type="button" id="btn-phone-quick-sos" class="btn-phone-sos" title="Activar modo rescate de 15-20 min para días difíciles">
+              🚨 Día Difícil (18m)
+            </button>
+          </div>
+      
+          <!-- Sub-navegación de Alumno (visible en modo Web) -->
+          <nav class="student-subnav" aria-label="Sub-navegación alumno">
+            <button class="tab-btn active" data-tab="onboarding">
+              📝 Onboarding & Diagnóstico
+            </button>
+            <button class="tab-btn" data-tab="plan">
+              📅 Mi Plan Dual (Ideal vs Mínimo)
+            </button>
+            <button class="tab-btn" data-tab="checkin">
+              ⏱️ Check-in Rápido (&lt;1 min)
+            </button>
+            <button class="tab-btn" data-tab="adaptive">
+              ⚡ Recomendaciones Adaptativas
+            </button>
+            <button class="tab-btn" data-tab="progress">
+              📊 Mi Progreso & Agendar 1-a-1
+            </button>
+          </nav>
+
+          <!-- Cuerpo desplazable dentro de la pantalla del celular -->
+          <div class="phone-scroll-body" id="phone-viewport-scroll">
+
+      <!-- TAB 1: ONBOARDING Y EVALUACIÓN INICIAL -->
+      <section id="tab-student-onboarding" class="student-tab-content">
+        <div class="onboarding-grid">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">📝 Evaluación Inicial de Adherencia</h2>
+                <p class="card-subtitle">Identificamos qué hace que abandones la rutina para construir tu sistema de rescate.</p>
+              </div>
+              <span id="onboarding-status-badge" class="badge badge-risk-amarillo">Calibración Pendiente</span>
+            </div>
+
+            <form id="onboarding-form">
+              <!-- Pregunta 1 -->
+              <div class="question-group">
+                <h3 class="question-title">1. ¿Cuál es tu historial con el entrenamiento de gimnasio?</h3>
+                <div class="options-stack">
+                  <label class="option-label">
+                    <input type="radio" name="q_historial" value="principiante" checked>
+                    <span>Principiante absoluto / Nunca logré entrenar más de 1 mes seguido</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_historial" value="esporadico">
+                    <span>Esporádico: me anoto con entusiasmo, voy 3 semanas y abandono</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_historial" value="experimentado_parado">
+                    <span>Fui constante en el pasado, pero llevo meses parado por estrés o trabajo</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Pregunta 2 -->
+              <div class="question-group">
+                <h3 class="question-title">2. En tus intentos anteriores, ¿cuál fue la causa principal de abandono?</h3>
+                <div class="options-stack">
+                  <label class="option-label">
+                    <input type="radio" name="q_motivo_abandono" value="tiempo" checked>
+                    <span>Falta de tiempo por sobrecarga de trabajo, estudio o familia</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_motivo_abandono" value="energia">
+                    <span>Batería mental y física agotada al llegar la tarde</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_motivo_abandono" value="desmotivacion">
+                    <span>Falté una semana, sentí culpa y pensé "ya para qué seguir"</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_motivo_abandono" value="desorganizacion">
+                    <span>Un viaje, examen o feriado rompió mi horario y me costó retomar</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Pregunta 3 -->
+              <div class="question-group">
+                <h3 class="question-title">3. Cuando una semana no podés cumplir tu plan, ¿qué pensamiento aparece?</h3>
+                <div class="options-stack">
+                  <label class="option-label">
+                    <input type="radio" name="q_reaccion_fallo" value="todo_o_nada" checked>
+                    <span>"Para hacer 20 minutos mejor no voy; arranco con todo el próximo lunes" (Todo o Nada)</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_reaccion_fallo" value="agotado">
+                    <span>"No doy más de cansancio, forzarme solo empeora mi estrés" (Fatiga Cognitiva)</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_reaccion_fallo" value="desborde">
+                    <span>"Mi rutina cotidiana es un caos impredecible" (Horarios Caóticos)</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_reaccion_fallo" value="ciclico">
+                    <span>"Siempre me pasa lo mismo, no tengo suficiente disciplina" (Reiniciador Cíclico)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Pregunta 4 -->
+              <div class="question-group">
+                <h3 class="question-title">4. ¿Cuántos días REALISTAS podés comprometerte en tu peor semana del año?</h3>
+                <div class="options-stack">
+                  <label class="option-label">
+                    <input type="radio" name="q_disponibilidad" value="2_dias">
+                    <span>2 días fijos a la semana (Compromiso blindado)</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_disponibilidad" value="3_dias" checked>
+                    <span>3 días a la semana (Frecuencia óptima recomendada)</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_disponibilidad" value="4_dias">
+                    <span>4 días a la semana (Requiere alta disciplina de agenda)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Pregunta 5 -->
+              <div class="question-group">
+                <h3 class="question-title">5. ¿Aceptarías una "Versión Mínima" de 15-20 min como entrenamiento válido en días difíciles?</h3>
+                <div class="options-stack">
+                  <label class="option-label">
+                    <input type="radio" name="q_version_minima" value="si_clave" checked>
+                    <span>¡Totalmente! Saber que 15 min salvan el día me quitaría una enorme culpa</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_version_minima" value="duda">
+                    <span>Tengo dudas de si 15 minutos realmente generan un beneficio muscular</span>
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_version_minima" value="prefiere_ideal">
+                    <span>Prefiero no ir si no puedo hacer la rutina completa de 1 hora</span>
+                  </label>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%;">
+                ⚡ Generar Diagnóstico e Hipótesis de Adherencia
+              </button>
+            </form>
+          </div>
+
+          <!-- Columna Derecha: Tarjeta de Diagnóstico Resultante -->
+          <div>
+            <div id="onboarding-result-container" class="diagnosis-result-card">
+              <div class="card-header" style="margin-bottom: 0.75rem;">
+                <span class="badge badge-risk-verde">Perfil Conductual Detectado</span>
+                <span id="diag-frecuencia-badge" class="badge badge-cyan">3 días / sem</span>
+              </div>
+
+              <div class="archetype-hero">
+                <div id="diag-archetype-icon" class="archetype-icon">🎯</div>
+                <div>
+                  <h3 id="diag-archetype-title" class="archetype-name">Perfeccionista / Todo o Nada</h3>
+                  <p id="diag-archetype-desc" class="archetype-desc">Exceso de exigencia inicial y susceptibilidad a la culpa tras fallos.</p>
+                </div>
+              </div>
+
+              <div class="hypothesis-box">
+                <div class="hypothesis-title">🔬 Hipótesis Diagnóstica de Trabajo</div>
+                <p id="diag-hypothesis-text" class="hypothesis-text">
+                  Fuerte tendencia a considerar que una sesión de menos de 60 minutos "no sirve". Ante cualquier imprevisto cancela la sesión. Introducir la Versión Mínima de 15-20 min reducirá la deserción en un 60%.
+                </p>
+              </div>
+
+              <div style="background: var(--bg-deep); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem;">Estrategia Innegociable</h4>
+                <p id="diag-strategy-text" style="font-size: 0.8rem; color: var(--text-secondary);">
+                  Validación obligatoria de la Versión Mínima como éxito total del día. En días difíciles, 15 min > 0 min.
+                </p>
+              </div>
+
+              <button id="btn-apply-onboarding-plan" class="btn btn-primary" style="width: 100%;">
+                ✅ Aplicar este Plan Dual a mi Semana
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: MI PLAN DUAL (IDEAL VS MÍNIMO) -->
+      <section id="tab-student-plan" class="student-tab-content" style="display: none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">📅 Mi Plan Semanal Realista (Estructura Dual)</h2>
+              <p class="card-subtitle">Cada sesión cuenta con su <strong>Versión Ideal</strong> y su <strong>Versión Mínima ("Día Difícil")</strong> para no abandonar cuando falte tiempo o energía.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span id="plan-frequency-badge" class="badge badge-cyan">Frecuencia: 3 días</span>
+            </div>
+          </div>
+
+          <div style="background: rgba(132, 204, 22, 0.08); border-left: 3px solid var(--lime-bright); padding: 0.75rem 1rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+            💡 <strong>Regla de Oro Entrenhábitos:</strong> Ejecutar la Versión Mínima en un día difícil cuenta exactamente como un <strong>100% de cumplimiento</strong> para tu racha y tu hábito. No es un "consuelo", es la herramienta que evita la deserción.
+          </div>
+
+          <div id="weekly-plan-cards-grid" class="plan-grid">
+            <!-- Renderizado dinámico desde app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: CHECK-IN RÁPIDO (<1 MINUTO) -->
+      <section id="tab-student-checkin" class="student-tab-content" style="display: none;">
+        <div class="checkin-container">
+          <div class="card">
+            <div class="card-header" style="justify-content: center; text-align: center;">
+              <div>
+                <h2 class="card-title">⏱️ Registro Diario de Sesión</h2>
+                <p class="card-subtitle">Menos de 60 segundos. Datos de conducta real, sin juicios morales.</p>
+              </div>
+            </div>
+
+            <!-- Cronómetro en Vivo de Usabilidad -->
+            <div class="timer-box">
+              <span>⏱️ Tiempo de registro:</span>
+              <span id="checkin-timer-display" class="timer-count">00:18</span>
+              <span style="font-size: 0.75rem; color: var(--lime-bright);">&lt; 45s objetivo</span>
+            </div>
+
+            <form id="checkin-form">
+              <!-- Selector de Estado Principal -->
+              <p style="font-size: 0.9rem; font-weight: 700; text-align: center; margin-bottom: 0.75rem;">¿Qué ocurrió hoy con tu entrenamiento?</p>
+              <div class="checkin-action-buttons">
+                <button type="button" class="checkin-btn btn-ideal" data-status="ideal">
+                  <span class="checkin-btn-icon">🟢</span>
+                  <span class="checkin-btn-title">Entrené Ideal</span>
+                  <span class="checkin-btn-subtitle">Rutina completa (50-60m)</span>
+                </button>
+
+                <button type="button" class="checkin-btn btn-minima" data-status="minima">
+                  <span class="checkin-btn-icon">🟡</span>
+                  <span class="checkin-btn-title">Entrené Mínima</span>
+                  <span class="checkin-btn-subtitle">Versión Día Difícil (15-20m)</span>
+                </button>
+
+                <button type="button" class="checkin-btn btn-missed" data-status="missed">
+                  <span class="checkin-btn-icon">🔴</span>
+                  <span class="checkin-btn-title">No Pude Hoy</span>
+                  <span class="checkin-btn-subtitle">Sesión no realizada</span>
+                </button>
+              </div>
+
+              <!-- Panel Desplegable de Barreras (se activa si es mínima o missed) -->
+              <div id="barrier-selection-panel" class="barrier-selection-panel">
+                <h3 class="panel-section-title">🔍 ¿Qué barrera u obstáculo apareció?</h3>
+                <div class="barrier-chips-grid">
+                  <button type="button" class="barrier-chip" data-barrier="B1_TIME">
+                    <span>⏰</span> <span>Falta de Tiempo / Agenda</span>
+                  </button>
+                  <button type="button" class="barrier-chip" data-barrier="B2_ENERGY">
+                    <span>🔋</span> <span>Baja Energía / Agotado</span>
+                  </button>
+                  <button type="button" class="barrier-chip" data-barrier="B3_ROUTINE_DISRUPTION">
+                    <span>🌪️</span> <span>Cambio de Rutina / Viaje</span>
+                  </button>
+                  <button type="button" class="barrier-chip" data-barrier="B4_LOGISTICS">
+                    <span>🚗</span> <span>Gym Lleno / Clima / Traslado</span>
+                  </button>
+                  <button type="button" class="barrier-chip" data-barrier="B5_GUILT_ALL_OR_NOTHING">
+                    <span>🧠</span> <span>Desmotivación / Fricción Mental</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Sliders de Dificultad y Energía -->
+              <div class="sliders-grid">
+                <div class="slider-group">
+                  <div class="slider-label-row">
+                    <span>Dificultad Percibida para arrancar:</span>
+                    <span id="difficulty-val" class="slider-value-badge">3 / 5</span>
+                  </div>
+                  <input type="range" id="input-difficulty" min="1" max="5" value="3">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">
+                    <span>1: Muy fácil</span>
+                    <span>3: Moderado</span>
+                    <span>5: Extremo</span>
+                  </div>
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-label-row">
+                    <span>Nivel de Energía al registrar:</span>
+                    <span id="energy-val" class="slider-value-badge" style="color: var(--amber-light);">3 / 5</span>
+                  </div>
+                  <input type="range" id="input-energy" min="1" max="5" value="3">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">
+                    <span>1: Agotado</span>
+                    <span>3: Normal</span>
+                    <span>5: Con energía</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notas Breves Opcionales -->
+              <div class="form-group">
+                <label class="form-label" for="checkin-notes">Nota breve o comentario contextual (opcional):</label>
+                <input type="text" id="checkin-notes" class="form-input" placeholder="Ej: Tuve guardia larga hasta las 18hs y solo pude hacer 15 min">
+              </div>
+
+              <button type="submit" id="btn-save-checkin" class="btn btn-primary" style="width: 100%;">
+                💾 Guardar Check-in en &lt; 30 segundos
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: MOTOR DE RECOMENDACIONES ADAPTATIVAS EN VIVO -->
+      <section id="tab-student-adaptive" class="student-tab-content" style="display: none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">⚡ Motor de Recomendaciones Adaptativas en Vivo</h2>
+              <p class="card-subtitle">Inferencia conductual inmediata basada en tu check-in reciente y tus patrones históricos.</p>
+            </div>
+            <span id="rec-rule-id-badge" class="badge badge-cyan">RULE_TIME_01</span>
+          </div>
+
+          <div id="adaptive-recommendation-display" class="recommendation-card">
+            <div class="rec-header">
+              <span id="rec-type-badge" class="badge badge-risk-amarillo">Intervención Recomendada</span>
+              <span id="rec-duration-badge" style="font-size: 0.8rem; font-weight: 700; color: var(--amber-light);">⏱️ 18 min de rescate</span>
+            </div>
+
+            <h3 id="rec-title" class="rec-title">Recomendación: Activá la Versión Mínima ("Día Difícil")</h3>
+
+            <div id="rec-rationale" class="rec-rationale">
+              <strong>¿Por qué esta intervención?</strong> El sesgo "todo o nada" te hace creer que necesitás 60 minutos libres. Con solo 18 minutos ejecutando 2 ejercicios básicos preservás tu hábito y salud muscular.
+            </div>
+
+            <div class="rec-details-list">
+              <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Prescripción Inmediata:</h4>
+              <ul id="rec-action-steps" class="exercise-list minima">
+                <li>Sentadillas en Copa (Goblet) con mancuerna - 2 series de 10 reps</li>
+                <li>Remo con mancuerna a una mano - 2 series de 10 reps</li>
+                <li>1 serie de plancha abdominal de 45 segundos</li>
+              </ul>
+            </div>
+
+            <div class="rec-actions-row">
+              <button id="btn-accept-rec" class="btn btn-primary">
+                👍 Aceptar y Activar Sugerencia
+              </button>
+              <button id="btn-dismiss-rec" class="btn btn-secondary">
+                Entendido
+              </button>
+            </div>
+
+            <!-- Bucle de Validación (Función 4 del Borrador) -->
+            <div class="feedback-box">
+              <div class="feedback-question">
+                <span>🤔 ¿Te sirvió esta sugerencia para sostener el hábito?</span>
+              </div>
+              <div class="feedback-buttons">
+                <button type="button" class="feedback-btn" data-helped="si">
+                  👍 Sí, me sirvió
+                </button>
+                <button type="button" class="feedback-btn" data-helped="parcial">
+                  🤔 A medias
+                </button>
+                <button type="button" class="feedback-btn" data-helped="no">
+                  👎 No me sirvió
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: INFORME DE PROGRESO Y AGENDAMIENTO 1-A-1 -->
+      <section id="tab-student-progress" class="student-tab-content" style="display: none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">📊 Mi Informe de Progreso y Salud del Hábito</h2>
+              <p class="card-subtitle">Métricas reales de continuidad, capacidad de retorno y salvataje de entrenamientos.</p>
+            </div>
+            <span id="student-risk-badge" class="badge badge-risk-verde">Riesgo Bajo</span>
+          </div>
+
+          <!-- Cuadrícula de Métricas Clave -->
+          <div class="metrics-row">
+            <div class="metric-tile">
+              <span class="metric-tile-title">Tasa de Adherencia</span>
+              <div id="metric-adherence-val" class="metric-tile-value">82%</div>
+              <span class="metric-tile-subtext">Sesiones realizadas vs planeadas</span>
+            </div>
+
+            <div class="metric-tile">
+              <span class="metric-tile-title">Tasa de Salvataje</span>
+              <div id="metric-salvataje-val" class="metric-tile-value amber">40%</div>
+              <span class="metric-tile-subtext">Sesiones salvadas vía Versión Mínima</span>
+            </div>
+
+            <div class="metric-tile">
+              <span class="metric-tile-title">Tiempo Medio de Retorno (MTTR)</span>
+              <div id="metric-mttr-val" class="metric-tile-value">1.2 d</div>
+              <span class="metric-tile-subtext">Días promedio para volver tras fallo</span>
+            </div>
+
+            <div class="metric-tile">
+              <span class="metric-tile-title">Racha Protegida</span>
+              <div id="metric-racha-val" class="metric-tile-value">4 sem</div>
+              <span class="metric-tile-subtext">Semanas activas sin abandono total</span>
+            </div>
+          </div>
+
+          <!-- Historial Reciente de Check-ins -->
+          <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">Historial Reciente de Check-ins</h3>
+            <div class="cohort-table-wrapper">
+              <table class="cohort-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Duración Real</th>
+                    <th>Barrera Reportada</th>
+                    <th>Intervención Adaptativa</th>
+                    <th>¿Ayudó?</th>
+                  </tr>
+                </thead>
+                <tbody id="student-checkins-history-tbody">
+                  <!-- Llenado dinámico desde app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Agendamiento de Sesión 1-a-1 (Función 5 y 6 del Borrador) -->
+          <div class="booking-container">
+            <div class="card" style="margin-bottom: 0; background: var(--bg-deep);">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title" style="font-size: 1.05rem;">📅 Agendar Entrevista 1-a-1 con el Coach</h3>
+                  <p class="card-subtitle">Sesión periódica quincenal con tus datos ya precargados.</p>
+                </div>
+              </div>
+
+              <form id="booking-form">
+                <div class="form-group">
+                  <label class="form-label" for="booking-date">Fecha para la sesión:</label>
+                  <input type="date" id="booking-date" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="booking-time">Horario preferido:</label>
+                  <select id="booking-time" class="form-input">
+                    <option value="09:00">09:00 hs (Mañana)</option>
+                    <option value="14:00">14:00 hs (Mediodía)</option>
+                    <option value="18:30" selected>18:30 hs (Tarde)</option>
+                    <option value="20:00">20:00 hs (Noche)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="booking-notes">Temas o inquietudes específicas para conversar:</label>
+                  <textarea id="booking-notes" class="form-textarea" placeholder="Ej: Quisiera revisar por qué los jueves me cuesta tanto arrancar..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                  🚀 Confirmar y Agendar Sesión 1-a-1
+                </button>
+              </form>
+            </div>
+
+            <!-- Vista Previa de Datos Precargados -->
+            <div class="card" style="margin-bottom: 0; background: var(--bg-deep);">
+              <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">📋 Ficha de Telemetría Precargada para el Coach</h3>
+              <div id="booking-telemetry-preview" class="telemetry-preview-box">
+                <!-- Se llena dinámicamente -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+          </div><!-- /.phone-scroll-body -->
+
+          <!-- Barra de Navegación Inferior estilo App Móvil Nativa -->
+          <nav class="phone-bottom-nav phone-only-chrome" aria-label="Navegación app móvil">
+            <button type="button" class="phone-nav-item active" data-tab="onboarding">
+              <span class="nav-icon">📝</span>
+              <span>Diagnóstico</span>
+            </button>
+            <button type="button" class="phone-nav-item" data-tab="plan">
+              <span class="nav-icon">📅</span>
+              <span>Plan Dual</span>
+            </button>
+            <button type="button" class="phone-nav-item" data-tab="checkin">
+              <span class="nav-icon">⏱️</span>
+              <span>Check-in</span>
+            </button>
+            <button type="button" class="phone-nav-item" data-tab="adaptive">
+              <span class="nav-icon">⚡</span>
+              <span>Adaptativo</span>
+            </button>
+            <button type="button" class="phone-nav-item" data-tab="progress">
+              <span class="nav-icon">📊</span>
+              <span>Progreso</span>
+            </button>
+          </nav>
+
+          <!-- Indicador Home de iPhone / Android -->
+          <div class="phone-home-indicator phone-only-chrome">
+            <div class="phone-home-bar"></div>
+          </div>
+
+        </div><!-- /.phone-screen-inner -->
+      </div><!-- /.phone-frame-wrapper -->
+    </div><!-- /#view-student -->
+
+    <!-- ========================================================================
+         PANEL INTERACTIVO DE SIMULACIÓN DE ESCENARIOS EN VIVO (AL LADO DEL CELULAR)
+         ======================================================================== -->
+    <aside id="simulation-control-panel" class="simulation-side-panel">
+      <div class="card" style="border-color: rgba(132, 204, 22, 0.4);">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🧪 Centro de Simulación Interactiva en Vivo</h2>
+            <p class="card-subtitle">Hacé clic en cualquier escenario para disparar acciones reales en el celular de la izquierda y actualizar el Panel del Coach en tiempo real.</p>
+          </div>
+          <span class="badge badge-risk-verde">Interactivo 100%</span>
+        </div>
+
+        <!-- Salto rápido de pantallas del celular -->
+        <div style="margin-bottom: 1.25rem;">
+          <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+            📱 Ir directo a una pantalla dentro del celular:
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            <button type="button" class="btn btn-secondary btn-sm quick-jump-tab" data-tab="onboarding">1. Evaluación Inicial</button>
+            <button type="button" class="btn btn-secondary btn-sm quick-jump-tab" data-tab="plan">2. Plan Semanal Dual</button>
+            <button type="button" class="btn btn-secondary btn-sm quick-jump-tab" data-tab="checkin">3. Check-in (&lt;1 min)</button>
+            <button type="button" class="btn btn-secondary btn-sm quick-jump-tab" data-tab="adaptive">4. Motor Adaptativo</button>
+            <button type="button" class="btn btn-secondary btn-sm quick-jump-tab" data-tab="progress">5. Informe &amp; Agenda 1-a-1</button>
+          </div>
+        </div>
+
+        <!-- Botones de Simulación de Escenarios en 1 Clic -->
+        <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+          ⚡ Simular Situaciones Reales del Alumno (1 Clic):
+        </div>
+
+        <div class="sim-scenario-grid">
+          <button type="button" class="sim-scenario-btn amber" data-sim="lack_of_time">
+            <div class="sim-btn-header">
+              <span>⏰ "Hoy salí tarde de trabajar"</span>
+              <span class="badge badge-risk-amarillo">18 min</span>
+            </div>
+            <div class="sim-btn-desc">
+              Simula un día con poco tiempo (Barrera B1). Activa la <strong>Versión Mínima</strong>, salva la racha y abre la recomendación en el celular.
+            </div>
+          </button>
+
+          <button type="button" class="sim-scenario-btn amber" data-sim="low_energy">
+            <div class="sim-btn-header">
+              <span>🔋 "Estoy agotado mentalmente"</span>
+              <span class="badge badge-risk-amarillo">Regla 2m</span>
+            </div>
+            <div class="sim-btn-desc">
+              Simula fatiga al final del día (Barrera B2). Dispara la <strong>Micro-meta de Entrada de 2 minutos</strong> sin exigir rutina pesada.
+            </div>
+          </button>
+
+          <button type="button" class="sim-scenario-btn coral" data-sim="missed_guilt">
+            <div class="sim-btn-header">
+              <span>🔴 "Hoy falté y siento culpa"</span>
+              <span class="badge badge-risk-rojo">Rescate</span>
+            </div>
+            <div class="sim-btn-desc">
+              Simula una sesión perdida por sesgo "Todo o Nada" (Barrera B5). Dispara el protocolo <strong>Never Miss Twice</strong> sin castigo.
+            </div>
+          </button>
+
+          <button type="button" class="sim-scenario-btn" data-sim="completed_ideal">
+            <div class="sim-btn-header">
+              <span>🟢 "Completé mi Rutina Ideal"</span>
+              <span class="badge badge-risk-verde">60 min</span>
+            </div>
+            <div class="sim-btn-desc">
+              Registra una sesión completa exitosa en &lt;20 segundos, eleva la tasa de adherencia y celebra el progreso.
+            </div>
+          </button>
+
+          <button type="button" class="sim-scenario-btn cyan" data-sim="schedule_1on1">
+            <div class="sim-btn-header">
+              <span>📅 "Agendar Sesión 1-a-1 con Coach"</span>
+              <span class="badge badge-cyan">Turno</span>
+            </div>
+            <div class="sim-btn-desc">
+              Agenda una entrevista personalizada adjuntando el resumen de barreras y métricas directamente al Panel del Coach.
+            </div>
+          </button>
+
+          <button type="button" class="sim-scenario-btn cyan" data-sim="open_split_mode">
+            <div class="sim-btn-header">
+              <span>📱+📋 Ver Celular + Panel Coach Juntos</span>
+              <span class="badge badge-cyan">En Vivo</span>
+            </div>
+            <div class="sim-btn-desc">
+              Abre el modo de pantalla dividida para ver el Celular del Alumno y el Dashboard del Entrenador al mismo tiempo.
+            </div>
+          </button>
+        </div>
+
+        <!-- Resumen en vivo de lo que ve el Coach para el alumno activo -->
+        <div id="sim-coach-mini-mirror" class="sim-live-log">
+          <!-- Se actualiza en vivo desde app.js -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- ========================================================================
+         VISTA 2: COACH / PANEL DE SEGUIMIENTO PROFESIONAL
+         ======================================================================== -->
+    <div id="view-coach" class="view-section">
+      
+      <!-- Métricas Agregadas de la Cohorte -->
+      <div class="coach-header-stats">
+        <div class="metric-tile">
+          <span class="metric-tile-title">Total Asesorados</span>
+          <div id="coach-total-students" class="metric-tile-value">4</div>
+          <span class="metric-tile-subtext">Alumnos en acompañamiento 1-a-1</span>
+        </div>
+
+        <div class="metric-tile">
+          <span class="metric-tile-title">Semáforo de Riesgo</span>
+          <div id="coach-risk-distribution" class="metric-tile-value" style="font-size: 1.4rem;">
+            🟢 2 &nbsp; 🟡 1 &nbsp; 🔴 1
+          </div>
+          <span class="metric-tile-subtext">50% Bajo | 25% Medio | 25% Crítico</span>
+        </div>
+
+        <div class="metric-tile">
+          <span class="metric-tile-title">Tasa Salvataje Cohorte</span>
+          <div id="coach-salvataje-cohort" class="metric-tile-value amber">32%</div>
+          <span class="metric-tile-subtext">Sesiones salvadas con Versión Mínima</span>
+        </div>
+
+        <div class="metric-tile">
+          <span class="metric-tile-title">MTTR Promedio</span>
+          <div id="coach-mttr-cohort" class="metric-tile-value">1.8 d</div>
+          <span class="metric-tile-subtext">Tiempo de retorno tras tropiezos</span>
+        </div>
+      </div>
+
+      <!-- Tabla General de Cohorte de Alumnos -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">👥 Cohorte de Asesorados Activos</h2>
+            <p class="card-subtitle">Semáforos de riesgo de abandono en tiempo real y comparativa de adherencia.</p>
+          </div>
+          <span class="badge badge-cyan">Sincronización en Vivo</span>
+        </div>
+
+        <div class="cohort-table-wrapper">
+          <table class="cohort-table">
+            <thead>
+              <tr>
+                <th>Alumno</th>
+                <th>Arquetipo Conductual</th>
+                <th>Semáforo Riesgo</th>
+                <th>Adherencia</th>
+                <th>Salvadas (Mínima)</th>
+                <th>MTTR</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="coach-cohort-tbody">
+              <!-- Llenado dinámico desde app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Ficha Detallada del Alumno Seleccionado -->
+      <div id="coach-student-dossier" class="card">
+        <div class="card-header">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div id="coach-detail-avatar" style="font-size: 2.2rem;">👨‍💼</div>
+            <div>
+              <h2 id="coach-detail-name" class="card-title">Martín Rossi</h2>
+              <p id="coach-detail-subtitle" class="card-subtitle">34 años • Abogado Corporativo • Arquetipo: Perfeccionista / Todo o Nada</p>
+            </div>
+          </div>
+          <div id="coach-detail-risk-badge" class="badge badge-risk-amarillo">
+            🟡 Riesgo Medio
+          </div>
+        </div>
+
+        <!-- Hipótesis de Adherencia Actual -->
+        <div class="hypothesis-box" style="margin-bottom: 1.5rem;">
+          <div class="hypothesis-title">🔬 Hipótesis Diagnóstica en Seguimiento</div>
+          <p id="coach-detail-hypothesis" class="hypothesis-text">
+            Fuerte autoexigencia inicial. Considera que menos de 60 minutos "no vale la pena". Excelente respuesta demostrada a la Versión Mínima de 20 min cuando se le encuadra como preservación de identidad.
+          </p>
+        </div>
+
+        <!-- Comparativa de Sesiones: Ideales vs Mínimas vs Perdidas -->
+        <div class="metrics-row" style="margin-bottom: 1.5rem;">
+          <div class="metric-tile" style="background: var(--bg-deep);">
+            <span class="metric-tile-title">Sesiones Ideales</span>
+            <div id="coach-stat-ideales" class="metric-tile-value" style="font-size: 1.8rem;">2</div>
+            <span class="metric-tile-subtext">Rutina completa 60m</span>
+          </div>
+
+          <div class="metric-tile" style="background: var(--bg-deep);">
+            <span class="metric-tile-title">Sesiones Mínimas ("Día Difícil")</span>
+            <div id="coach-stat-minimas" class="metric-tile-value amber" style="font-size: 1.8rem;">2</div>
+            <span class="metric-tile-subtext">Salvadas en 15-20m</span>
+          </div>
+
+          <div class="metric-tile" style="background: var(--bg-deep);">
+            <span class="metric-tile-title">Sesiones No Realizadas</span>
+            <div id="coach-stat-missed" class="metric-tile-value coral" style="font-size: 1.8rem;">1</div>
+            <span class="metric-tile-subtext">Omisiones registradas</span>
+          </div>
+        </div>
+
+        <!-- Generador Automático de Puntos para la Entrevista (Talking Points) -->
+        <div class="talking-points-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.5rem;">🎯</span>
+              <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">Puntos Sugeridos para la Entrevista 1-a-1</h3>
+            </div>
+            <span class="badge badge-cyan">Inferencia Automática Coach</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.35rem;">
+            Algoritmo que sintetiza las barreras repetidas, fallas de reglas y métricas para maximizar el valor de la sesión presencial / virtual.
+          </p>
+
+          <div id="coach-talking-points-list" class="talking-points-list">
+            <!-- Llenado dinámico desde app.js -->
+          </div>
+        </div>
+
+        <!-- Bandeja de Entrevistas Solicitadas -->
+        <div style="margin-top: 2rem;">
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">📅 Sesiones 1-a-1 Agendadas por este Alumno</h3>
+          <div id="coach-interviews-tray" class="cohort-table-wrapper">
+            <!-- Llenado dinámico desde app.js -->
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /#view-coach -->
+    </div><!-- /.workspace-simulator-grid -->
+  </main>
+
+  <!-- ==========================================================================
+       TOAST DE NOTIFICACIONES EN VIVO
+       ========================================================================== -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- ==========================================================================
+       FOOTER
+       ========================================================================== -->
+  <footer class="app-footer">
+    <p><strong>Entrenhábitos</strong> &copy; 2026 — Plataforma de Adherencia y Formación de Hábitos en el Gimnasio.</p>
+    <p style="margin-top: 0.25rem;">Arquitectura Zero-Build Vanilla ES6+ • Simulador App Móvil + Panel Coach • Persistencia Reactiva LocalStorage</p>
+  </footer>
+
+  <!-- Bundle directo compatible con file:// y http:// (sin bloqueo CORS en navegador local) -->
+  <script src="js/bundle.js"></script>
+  <!-- Módulos fuente integrados: src="js/demo_data.js" src="js/rules_engine.js" src="js/store.js" src="js/app.js" -->
+
+</body>
+</html>
