@@ -29,7 +29,8 @@ c:\Users\lauta\Proyectos\PROYECTO ENTRENHABITOS\
 ├── docs\
 │   ├── R1_DISENO_CONDUCTUAL_E_INNOVACION.md         # [R1] Análisis Crítico, Psicología del Hábito e Ideación (733 líneas)
 │   ├── R2_SRS_REQUERIMIENTOS_Y_MODELADO.md          # [R2] Ingeniería de Requerimientos SRS IEEE/ISO (1.138 líneas)
-│   └── R3_DIRECCION_DE_PROYECTO_Y_ROADMAP.md        # [R3] Plan Director de Proyecto, WBS, Riesgos y KPIs (738 líneas)
+│   ├── R3_DIRECCION_DE_PROYECTO_Y_ROADMAP.md        # [R3] Plan Director de Proyecto, WBS, Riesgos y KPIs (738 líneas)
+│   └── R5_ELICITACION_Y_DESCUBRIMIENTO_PRODUCTO.md  # [R5] Cuestionario de Elicitación con el Cliente + Matriz de Decisiones e Ideas
 ├── index.html                                       # [R4] Prototipo Web Interactivo (Vista Alumno + Vista Coach)
 ├── css\
 │   └── styles.css                                   # Sistema de diseño "Athletic Precision" (Dark Slate, Lima, Ámbar, Coral)
@@ -63,6 +64,10 @@ c:\Users\lauta\Proyectos\PROYECTO ENTRENHABITOS\
      - **Fase 2 (Meses 3-4):** Automatización Conductual y Retención Inteligente (hasta 100 alumnos/coach, alertas preventivas y backend cloud).
      - **Fase 3 (Meses 5+):** Plataforma Multi-Coach / SaaS B2B2C para entrenadores y gimnasios.
    - **Estructura de Desglose de Trabajo (WBS)** a 4 niveles, cronograma de 6 hitos, **Matriz de 8 Riesgos Críticos** (incluyendo fatiga de registro y abandono por vergüenza) y **Cuadro de Mando de KPIs en 3 Capas** (Clínica/Conductual: $MTTR$, $TSVM$, $TRR_{48}$; Producto: tiempo de check-in $<45\text{s}$; Negocio: LTV/CAC y Churn).
+
+4. **[`docs/R5_ELICITACION_Y_DESCUBRIMIENTO_PRODUCTO.md`](docs/R5_ELICITACION_Y_DESCUBRIMIENTO_PRODUCTO.md) — Guía de Elicitación de Requerimientos y Matriz de Decisiones de Producto (R5)**
+   - **Cuestionario estructurado en 7 bloques (18 preguntas clave)** para entrevistar al cliente/creador del método y descubrir reglas de negocio implícitas sobre el modelo 1-a-1, alcance de rutinas, umbrales de la versión mínima, prevención del abandono silencioso y validación de intervenciones.
+   - **Matriz de Decisiones de Producto** (Enfoque Ligero MVP vs. Enfoque Avanzado) y **6 Ideas Diferenciadoras** (*Termómetro Pre-Entreno*, *Día Comodín*, *Trofeo de Velocidad de Retorno*, *Selector de Batería Diaria*, *Acuerdos de Entrevista Fijados* y *Borrón y Cuenta Nueva Anti-Ghosting*).
 
 ---
 
