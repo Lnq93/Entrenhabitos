@@ -272,14 +272,22 @@ body {
   flex: 1;
 }
 
-/* Sub-navegación para la Vista Alumno */
+/* Sub-navegación para la Vista Alumno (Sin scrollbar nativa + transición elástica) */
 .student-subnav {
   display: flex;
   gap: 0.5rem;
-  border-bottom: 1px solid var(--border-card);
-  padding-bottom: 0.5rem;
+  background: rgba(9, 13, 22, 0.65);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 0.4rem;
   margin-bottom: 1.5rem;
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.student-subnav::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-btn {
@@ -287,11 +295,11 @@ body {
   border: 1px solid transparent;
   color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.5rem 1rem;
+  font-size: 0.86rem;
+  padding: 0.55rem 1rem;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 240ms cubic-bezier(0.22, 1, 0.36, 1);
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -300,14 +308,15 @@ body {
 
 .tab-btn:hover {
   color: var(--text-primary);
-  background: var(--bg-card);
+  background: rgba(30, 41, 59, 0.6);
 }
 
 .tab-btn.active {
-  background: var(--bg-card);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(51, 65, 85, 0.85));
   color: var(--lime-bright);
-  border-color: var(--border-card);
-  box-shadow: var(--shadow-sm);
+  border-color: rgba(132, 204, 22, 0.45);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 12px rgba(132, 204, 22, 0.15);
+  transform: translateY(-1px);
 }
 
 /* Contenedores de Vistas */
@@ -1668,4 +1677,598 @@ body.mode-split .phone-scroll-body .metric-tile-value {
   font-size: 0.82rem;
   color: var(--text-secondary);
 }
+
+/* ==========================================================================
+   V2.0 ANTI-VIBECODING UX, MICRO-INTERACTIONS & ADVANCED ANIMATIONS
+   ========================================================================== */
+
+/* 1. Iconografía SVG Vectorial Limpia */
+.nav-svg-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1), stroke 200ms ease;
+}
+
+.phone-nav-item .nav-svg-icon {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 2px;
+}
+
+.tab-btn.active .nav-svg-icon,
+.phone-nav-item.active .nav-svg-icon {
+  transform: scale(1.14);
+  filter: drop-shadow(0 0 6px rgba(132, 204, 22, 0.55));
+}
+
+/* 2. Notificación Push / WhatsApp Coach Empático en Celular */
+.phone-push-banner {
+  position: absolute;
+  top: 38px;
+  left: 10px;
+  right: 10px;
+  z-index: 60;
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(132, 204, 22, 0.55);
+  border-radius: 18px;
+  padding: 0.7rem 0.85rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.75), 0 0 20px rgba(132, 204, 22, 0.25);
+  transform: translateY(-150%) scale(0.92);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 280ms ease;
+}
+
+.phone-push-banner.visible {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.phone-push-banner.amber-theme {
+  border-color: rgba(245, 158, 11, 0.65);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.75), 0 0 22px rgba(245, 158, 11, 0.28);
+}
+
+.phone-push-banner.cyan-theme {
+  border-color: rgba(6, 182, 212, 0.65);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.75), 0 0 22px rgba(6, 182, 212, 0.28);
+}
+
+.push-banner-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(132, 204, 22, 0.22), rgba(6, 182, 212, 0.22));
+  border: 1px solid rgba(132, 204, 22, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.push-banner-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.push-banner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--lime-bright);
+  margin-bottom: 0.15rem;
+}
+
+.push-time {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.push-banner-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.15rem;
+}
+
+.push-banner-text {
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.push-banner-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.15rem 0.3rem;
+  border-radius: 6px;
+}
+
+.push-banner-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+/* 3. Onboarding Wizard Interactivo Paso a Paso */
+.wizard-controls-bar {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 1.15rem;
+}
+
+.wizard-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.55rem;
+}
+
+.wizard-step-pill {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--lime-bright);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.wizard-step-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wizard-step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wizard-step-dot.active {
+  background: var(--lime-bright);
+  color: var(--bg-deep);
+  border-color: var(--lime-bright);
+  transform: scale(1.12);
+  box-shadow: 0 0 10px rgba(132, 204, 22, 0.45);
+}
+
+.wizard-step-dot.completed {
+  border-color: rgba(132, 204, 22, 0.5);
+  color: var(--lime-bright);
+}
+
+.btn-wizard-mode-toggle {
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  color: var(--cyan-primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.btn-wizard-mode-toggle:hover {
+  background: rgba(6, 182, 212, 0.22);
+}
+
+.wizard-progress-track {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--lime-primary), var(--lime-bright), var(--cyan-primary));
+  border-radius: var(--radius-full);
+  transition: width 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#onboarding-form.wizard-mode-active .question-group {
+  display: none;
+  border-bottom: none;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.5rem;
+}
+
+#onboarding-form.wizard-mode-active .question-group.active-wizard-step {
+  display: block;
+  animation: wizardSlideIn 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes wizardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.wizard-nav-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-card);
+  margin-bottom: 0.5rem;
+}
+
+#onboarding-form:not(.wizard-mode-active) #wizard-nav-footer {
+  display: none;
+}
+
+/* 4. Skeleton Loading & Shimmer Realista (Regla #1 de @elijs.dev) */
+.skeleton-analysis-overlay {
+  padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  animation: fadeIn 180ms ease;
+}
+
+.skeleton-spinner-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--lime-bright);
+}
+
+.pulse-ring-loader {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--lime-bright);
+  border-top-color: transparent;
+  animation: spinLoader 700ms linear infinite;
+}
+
+@keyframes spinLoader {
+  to { transform: rotate(360deg); }
+}
+
+.skeleton-bar,
+.skeleton-box-lg {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: shimmerSweep 1.2s infinite linear;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-bar {
+  height: 14px;
+}
+
+.skeleton-bar.w-80 { width: 80%; }
+.skeleton-bar.w-60 { width: 60%; }
+.skeleton-bar.w-90 { width: 90%; }
+
+.skeleton-box-lg {
+  height: 82px;
+  border-radius: var(--radius-md);
+}
+
+@keyframes shimmerSweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.is-skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.is-skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(132, 204, 22, 0.12), transparent);
+  animation: shimmerOverlay 420ms ease-out;
+  pointer-events: none;
+}
+
+@keyframes shimmerOverlay {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* 5. Batería de Energía Animada y Selector Táctil de Fricción en Check-in */
+.tactile-level-selector {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.level-cell {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-card);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.4rem 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.level-cell.active {
+  background: rgba(132, 204, 22, 0.18);
+  border-color: var(--lime-bright);
+  color: var(--lime-bright);
+  transform: translateY(-1px);
+}
+
+.level-cell.high-friction.active {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--coral-primary);
+  color: var(--coral-light);
+}
+
+.battery-widget-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 0.35rem;
+}
+
+.battery-cells-container {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-deep);
+  border: 2px solid var(--border-card);
+  border-radius: 8px;
+  height: 34px;
+}
+
+.battery-terminal-cap {
+  width: 5px;
+  height: 14px;
+  background: var(--border-card);
+  border-radius: 0 3px 3px 0;
+}
+
+.battery-cell {
+  border: none;
+  border-radius: 4px;
+  background: rgba(51, 65, 85, 0.35);
+  cursor: pointer;
+  transition: all 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.battery-cell:hover {
+  transform: scaleY(1.08);
+}
+
+.battery-cells-container.level-1 .battery-cell.active,
+.battery-cells-container.level-2 .battery-cell.active {
+  background: linear-gradient(180deg, #f87171, #ef4444);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.45);
+}
+
+.battery-cells-container.level-3 .battery-cell.active {
+  background: linear-gradient(180deg, #fbbf24, #f59e0b);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.45);
+}
+
+.battery-cells-container.level-4 .battery-cell.active,
+.battery-cells-container.level-5 .battery-cell.active {
+  background: linear-gradient(180deg, #a3e635, #22c55e);
+  box-shadow: 0 0 10px rgba(132, 204, 22, 0.5);
+}
+
+/* 6. Morphing de Tarjetas del Plan Dual (Ideal vs Versión Mínima) */
+.day-card {
+  transition: all 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.day-card.minima-mode-active {
+  border-color: var(--amber-primary);
+  box-shadow: 0 8px 25px -5px rgba(245, 158, 11, 0.28), 0 0 0 1px rgba(245, 158, 11, 0.35);
+}
+
+.day-card.minima-mode-active .day-card-header {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.2), rgba(30, 41, 59, 0.95));
+}
+
+.version-block {
+  animation: versionMorphIn 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes versionMorphIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.day-duration-pill {
+  font-family: monospace;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--lime-bright);
+  border: 1px solid rgba(132, 204, 22, 0.35);
+  transition: all 250ms ease;
+}
+
+.day-card.minima-mode-active .day-duration-pill {
+  color: var(--amber-light);
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.15);
+}
+
+/* 7. Visualizaciones Analíticas SVG en Mi Progreso (Anillo Dual + Continuidad) */
+.progress-visual-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 780px) {
+  .progress-visual-grid {
+    grid-template-columns: 280px 1fr;
+  }
+}
+
+body.mode-mobile .phone-scroll-body .progress-visual-grid,
+body.mode-split .phone-scroll-body .progress-visual-grid {
+  grid-template-columns: 1fr !important;
+}
+
+.svg-ring-card,
+.continuity-timeline-card {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.svg-ring-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.adherence-svg-ring {
+  width: 104px;
+  height: 104px;
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: #1e293b;
+  stroke-width: 10;
+}
+
+.ring-fill-total {
+  fill: none;
+  stroke: var(--lime-bright);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ring-fill-rescue {
+  fill: none;
+  stroke: var(--amber-primary);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 950ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.timeline-nodes-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-top: 0.65rem;
+}
+
+.timeline-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 0.4rem 0.55rem;
+  min-width: 56px;
+  transition: transform 200ms ease;
+}
+
+.timeline-node:hover {
+  transform: translateY(-2px);
+}
+
+.timeline-node.ideal {
+  border-color: rgba(132, 204, 22, 0.5);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.timeline-node.minima {
+  border-color: rgba(245, 158, 11, 0.6);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.timeline-node.missed {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* 8. Animación de entrada en cascada (Staggered Reveal) */
+.stagger-animate {
+  animation: staggerFadeUp 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes staggerFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Efecto de pulso celebratorio en la pantalla del celular */
+@keyframes rescuePulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.65); }
+  70% { box-shadow: 0 0 0 18px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.rescue-pulse-active {
+  animation: rescuePulseGlow 750ms ease-out;
+}
+
 

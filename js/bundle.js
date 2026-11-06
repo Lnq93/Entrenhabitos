@@ -1,13 +1,12 @@
-/**
- * Entrenh?bitos - Bundle Autocontenido compatible con file:// y http://
- */
 (function() {
+"use strict";
 
 // === js/demo_data.js ===
 /**
  * Entrenhábitos - Catálogo de Datos Semilla y Taxonomía Conductual
  * Modelado para R4 (Prototipo Web Interactivo)
  */
+
 const BARRIERS_CATALOG = {
   B1_TIME: {
     id: 'B1_TIME',
@@ -50,6 +49,7 @@ const BARRIERS_CATALOG = {
     typicalImpact: 'Efecto "What-The-Hell": abandono total tras un pequeño desliz.'
   }
 };
+
 const INTERVENTIONS_CATALOG = {
   INT_01: {
     id: 'INT_01',
@@ -157,6 +157,7 @@ const INTERVENTIONS_CATALOG = {
     rationale: 'Arquitectura de Decisiones: Eludir la pérdida de fuerza de voluntad por fatiga de decisiones vespertina.'
   }
 };
+
 const ARCHETYPES_CATALOG = {
   PERFECCIONISTA: {
     name: 'Perfeccionista / Todo o Nada',
@@ -187,6 +188,7 @@ const ARCHETYPES_CATALOG = {
     keyStrategy: 'Rampa de retorno progresivo y freno de metas hiper-exigentes.'
   }
 };
+
 const INITIAL_PROFILES = [
   {
     id: 'alumno_martin',
@@ -665,6 +667,7 @@ const INITIAL_PROFILES = [
     pesosIntervenciones: {}
   }
 ];
+
 const ONBOARDING_QUESTIONS = [
   {
     id: 'q_historial',
@@ -730,6 +733,8 @@ if (typeof window !== 'undefined') {
  * Entrenhábitos - Motor de Reglas Adaptativas y Diagnóstico Conductual
  * Implementación modular de reglas deterministas (COM-B, Fogg, Hábitos Atómicos, SDT)
  */
+
+
 class RulesEngine {
   /**
    * Diagnostica el perfil de adherencia inicial a partir del cuestionario de Onboarding
@@ -1443,6 +1448,7 @@ if (typeof window !== 'undefined') {
  */
 
 
+
 const STORAGE_KEY = 'entrenhabitos_state_v1';
 
 // In-memory mock storage fallback for headless / Node testing environments
@@ -1472,6 +1478,7 @@ function getStorage() {
   }
   return memoryStorageInstance;
 }
+
 class AppStateStore {
   constructor() {
     this.profiles = [];
@@ -1699,6 +1706,19 @@ class AppStateStore {
       throw new Error('Barrera obligatoria: Si la sesión fue mínima o no entrenó, se debe registrar la barrera que causó la dificultad.');
     }
 
+    // Determinar fecha coherente con la línea temporal del perfil si no se especifica explícitamente
+    let defaultDate = new Date().toISOString().split('T')[0];
+    if (profile.historialCheckins && profile.historialCheckins.length > 0) {
+      const lastChk = profile.historialCheckins[profile.historialCheckins.length - 1];
+      if (lastChk && lastChk.fecha) {
+        const lastDateObj = new Date(`${lastChk.fecha}T12:00:00Z`);
+        if (!isNaN(lastDateObj.getTime())) {
+          lastDateObj.setUTCDate(lastDateObj.getUTCDate() + 2);
+          defaultDate = lastDateObj.toISOString().split('T')[0];
+        }
+      }
+    }
+
     // Ejecutar motor de reglas adaptativo
     const context = {
       status,
@@ -1706,7 +1726,7 @@ class AppStateStore {
       energyLevel: checkInData.energyLevel ?? checkInData.energia ?? 3,
       difficulty: checkInData.difficulty ?? checkInData.dificultad ?? 3,
       timeSpent: checkInData.timeSpent ?? checkInData.tiempoRealMin ?? (status === 'ideal' ? 55 : status === 'minima' ? 18 : 0),
-      date: checkInData.date || checkInData.fecha || new Date().toISOString().split('T')[0]
+      date: checkInData.date || checkInData.fecha || defaultDate
     };
 
     const recommendation = RulesEngine.evaluate(context, profile);
@@ -1939,6 +1959,7 @@ if (typeof window !== 'undefined') {
 
 
 
+
 class AppController {
   constructor() {
     this.currentRole = 'mobile'; // 'mobile' | 'split' | 'student' | 'coach'
@@ -1948,6 +1969,9 @@ class AppController {
     this.timerInterval = null;
     this.timerSeconds = 0;
     this.inspectedCoachStudentId = 'alumno_martin';
+    this.currentWizardStep = 1;
+    this.isWizardMode = true;
+    this.pushTimeout = null;
   }
 
   init() {
@@ -1968,7 +1992,7 @@ class AppController {
       this.render();
     });
 
-    console.log('✅ Entrenhábitos App (Simulador Móvil + Coach) inicializada con éxito.');
+    console.log('✅ Entrenhábitos App v2.0 (Simulador Móvil + Coach + Animaciones) inicializada con éxito.');
   }
 
   /**
@@ -1984,13 +2008,23 @@ class AppController {
       });
     });
 
-    // 2. Selector global de perfil de alumno
+    // 2. Selector global de perfil de alumno (con Skeleton Shimmer realista)
     const selectProfile = document.getElementById('global-profile-select');
     if (selectProfile) {
       selectProfile.addEventListener('change', (e) => {
         AppState.setActiveProfile(e.target.value);
         this.inspectedCoachStudentId = e.target.value;
-        this.showToast(`Perfil activo: ${AppState.getActiveProfile().nombre}`);
+        this.triggerSkeletonShimmer('#phone-viewport-scroll');
+        this.triggerSkeletonShimmer('#coach-student-dossier');
+        const active = AppState.getActiveProfile();
+        this.showToast(`Perfil activo: ${active.nombre}`);
+        this.showPhonePushNotification({
+          icon: active.avatar || '👤',
+          sender: 'ENTRENHÁBITOS • PERFIL SINCRONIZADO',
+          title: `Hola ${active.nombre.split(' ')[0]}`,
+          text: `Arquetipo activo: ${active.arquetipo}. Tu Plan Dual está listo.`,
+          theme: 'cyan-theme'
+        });
       });
     }
 
@@ -2000,6 +2034,7 @@ class AppController {
       btnResetDemo.addEventListener('click', () => {
         AppState.resetDemoData();
         this.inspectedCoachStudentId = 'alumno_martin';
+        this.setWizardStep(1);
         this.showToast('↺ Datos de los 4 perfiles restaurados al estado inicial');
       });
     }
@@ -2015,7 +2050,7 @@ class AppController {
       });
     });
 
-    // 4b. Botón SOS "Día Difícil (18m)" en la cabecera de la App Celular
+    // 4b. Botón SOS "Escudo 18m" en la cabecera de la App Celular
     const btnPhoneSos = document.getElementById('btn-phone-quick-sos');
     if (btnPhoneSos) {
       btnPhoneSos.addEventListener('click', () => {
@@ -2031,6 +2066,40 @@ class AppController {
         this.runScenarioSimulation(simType);
       });
     });
+
+    // 4d. Cerrar Notificación Push del Celular
+    const btnClosePush = document.getElementById('btn-close-push');
+    if (btnClosePush) {
+      btnClosePush.addEventListener('click', () => {
+        const banner = document.getElementById('phone-push-notification');
+        if (banner) banner.classList.remove('visible');
+      });
+    }
+
+    // 4e. Botón del Coach para enviar rescate empático directo al celular
+    const btnCoachNudge = document.getElementById('btn-coach-send-nudge');
+    if (btnCoachNudge) {
+      btnCoachNudge.addEventListener('click', () => {
+        const inspected = AppState.getProfileById(this.inspectedCoachStudentId) || AppState.getActiveProfile();
+        if (inspected && AppState.getActiveProfile().id !== inspected.id) {
+          AppState.setActiveProfile(inspected.id);
+        }
+        if (this.currentRole === 'coach') {
+          this.switchRole('split');
+        }
+        this.showPhonePushNotification({
+          icon: '💬',
+          sender: 'MENSAJE DIRECTO DE TU COACH',
+          title: `¡Hola ${inspected.nombre.split(' ')[0]}! Cero culpa hoy`,
+          text: 'Vi que fue una semana intensa. Activá tu Versión Mínima de 15 min hoy y mantenemos la racha viva 💪.',
+          theme: 'cyan-theme'
+        });
+        this.showToast(`📲 Mensaje empático enviado al celular de ${inspected.nombre}`);
+      });
+    }
+
+    // 4f. Controles del Wizard de Onboarding Paso a Paso
+    this.bindWizardEvents();
 
     // 5. Botones táctiles de estado de Check-in
     const checkinBtns = document.querySelectorAll('.checkin-btn');
@@ -2053,22 +2122,40 @@ class AppController {
       });
     });
 
-    // 7. Sliders de dificultad y energía
+    // 7. Sliders y Widgets Interactivos de Dificultad y Batería de Energía
     const sliderDiff = document.getElementById('input-difficulty');
     const diffVal = document.getElementById('difficulty-val');
     if (sliderDiff && diffVal) {
       sliderDiff.addEventListener('input', (e) => {
-        diffVal.textContent = `${e.target.value} / 5`;
+        this.syncDifficultyWidget(Number(e.target.value));
       });
     }
+
+    const diffCells = document.querySelectorAll('#interactive-difficulty-cells .level-cell');
+    diffCells.forEach((cell) => {
+      cell.addEventListener('click', () => {
+        const val = Number(cell.getAttribute('data-val'));
+        if (sliderDiff) sliderDiff.value = String(val);
+        this.syncDifficultyWidget(val);
+      });
+    });
 
     const sliderEnergy = document.getElementById('input-energy');
     const energyVal = document.getElementById('energy-val');
     if (sliderEnergy && energyVal) {
       sliderEnergy.addEventListener('input', (e) => {
-        energyVal.textContent = `${e.target.value} / 5`;
+        this.syncEnergyBatteryWidget(Number(e.target.value));
       });
     }
+
+    const batteryCells = document.querySelectorAll('#interactive-energy-battery .battery-cell');
+    batteryCells.forEach((cell) => {
+      cell.addEventListener('click', () => {
+        const val = Number(cell.getAttribute('data-val'));
+        if (sliderEnergy) sliderEnergy.value = String(val);
+        this.syncEnergyBatteryWidget(val);
+      });
+    });
 
     // 8. Envío del Formulario de Check-in (<1 min)
     const checkinForm = document.getElementById('checkin-form');
@@ -2206,10 +2293,16 @@ class AppController {
         difficulty: 4,
         energyLevel: 3,
         durationSeg: 18,
-        notes: 'Simulación: Salí tarde del trabajo y activé la Versión Mínima de 18m',
-        date: todayStr
+        notes: 'Simulación: Salí tarde del trabajo y activé la Versión Mínima de 18m'
       });
       this.switchStudentTab('adaptive');
+      this.showPhonePushNotification({
+        icon: '🛡️',
+        sender: 'ESCUDO DÍA DIFÍCIL • ACTIVO',
+        title: '¡Hábito salvado en 18 minutos!',
+        text: '18 min hoy > 0 min. Tu racha semanal sigue al 100% sin culpa.',
+        theme: 'amber-theme'
+      });
       this.showToast('⏰ Simulado: Día con poco tiempo → Versión Mínima activada y racha salvada');
     } else if (simType === 'low_energy') {
       AppState.submitCheckIn({
@@ -2219,10 +2312,16 @@ class AppController {
         difficulty: 4,
         energyLevel: 1,
         durationSeg: 16,
-        notes: 'Simulación: Batería mental baja → Micro-meta de 2 min completada',
-        date: todayStr
+        notes: 'Simulación: Batería mental baja → Micro-meta de 2 min completada'
       });
       this.switchStudentTab('adaptive');
+      this.showPhonePushNotification({
+        icon: '🔋',
+        sender: 'REGLA DE LOS 2 MINUTOS • FOGG B=MAP',
+        title: 'Batería baja detectada: Cero presión',
+        text: 'Solo cumplí el ritual de entrada de 2 min. La identidad se protege sin agotarte.',
+        theme: 'amber-theme'
+      });
       this.showToast('🔋 Simulado: Baja energía → Regla de los 2 Minutos activada');
     } else if (simType === 'missed_guilt') {
       AppState.submitCheckIn({
@@ -2232,10 +2331,16 @@ class AppController {
         difficulty: 5,
         energyLevel: 2,
         durationSeg: 21,
-        notes: 'Simulación: No pude asistir hoy, evitando caer en el Todo o Nada',
-        date: todayStr
+        notes: 'Simulación: No pude asistir hoy, evitando caer en el Todo o Nada'
       });
       this.switchStudentTab('adaptive');
+      this.showPhonePushNotification({
+        icon: '🤝',
+        sender: 'PROTOCOLO NEVER MISS TWICE',
+        title: 'Un tropiezo no borra tu progreso',
+        text: 'Cero castigo ni compensación doble. Tu próxima sesión ya está ajustada.',
+        theme: 'cyan-theme'
+      });
       this.showToast('🛡️ Simulado: Sesión perdida → Protocolo "Never Miss Twice" sin culpa activado');
     } else if (simType === 'completed_ideal') {
       AppState.submitCheckIn({
@@ -2245,10 +2350,16 @@ class AppController {
         difficulty: 2,
         energyLevel: 4,
         durationSeg: 14,
-        notes: 'Simulación: Sesión ideal de 60 minutos completada con éxito',
-        date: todayStr
+        notes: 'Simulación: Sesión ideal de 60 minutos completada con éxito'
       });
       this.switchStudentTab('progress');
+      this.showPhonePushNotification({
+        icon: '🔥',
+        sender: 'ENTRENHÁBITOS • SESIÓN COMPLETA',
+        title: '¡Rutina Ideal de 60 min Registrada!',
+        text: `Adherencia actual: ${AppState.getActiveProfile().scoreAdherencia}%. ¡Excelente constancia!`,
+        theme: ''
+      });
       this.showToast('🟢 Simulado: ¡Sesión Ideal completada! Adherencia actualizada');
     } else if (simType === 'schedule_1on1') {
       const req = AppState.scheduleInterview({
@@ -2258,8 +2369,209 @@ class AppController {
         notes: 'Quiero revisar cómo sostener la rutina en semanas de cierre laboral.'
       });
       this.switchStudentTab('progress');
+      this.showPhonePushNotification({
+        icon: '📅',
+        sender: 'AGENDA 1-A-1 • COACH NOTIFICADO',
+        title: `Sesión confirmada (${req.hora} hs)`,
+        text: 'Tu ficha de barreras y métricas ya fue enviada al Panel del Coach.',
+        theme: 'cyan-theme'
+      });
       this.showToast(`📅 Turno 1-a-1 agendado (${req.fecha} ${req.hora} hs) y enviado al Panel Coach`);
     }
+  }
+
+  /**
+   * Vincula la navegación paso a paso del Wizard de Onboarding
+   */
+  bindWizardEvents() {
+    const form = document.getElementById('onboarding-form');
+    const stepDots = document.querySelectorAll('.wizard-step-dot');
+    const btnPrev = document.getElementById('btn-wizard-prev');
+    const btnNext = document.getElementById('btn-wizard-next');
+    const btnToggleMode = document.getElementById('btn-toggle-wizard-mode');
+
+    stepDots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const step = Number(dot.getAttribute('data-step'));
+        if (!this.isWizardMode) {
+          this.toggleWizardMode(true);
+        }
+        this.setWizardStep(step);
+      });
+    });
+
+    if (btnPrev) {
+      btnPrev.addEventListener('click', () => {
+        if (this.currentWizardStep > 1) {
+          this.setWizardStep(this.currentWizardStep - 1);
+        }
+      });
+    }
+
+    if (btnNext) {
+      btnNext.addEventListener('click', () => {
+        if (this.currentWizardStep < 5) {
+          this.setWizardStep(this.currentWizardStep + 1);
+        } else {
+          this.handleOnboardingSubmit();
+        }
+      });
+    }
+
+    if (btnToggleMode) {
+      btnToggleMode.addEventListener('click', () => {
+        this.toggleWizardMode(!this.isWizardMode);
+      });
+    }
+
+    // Resaltar opción seleccionada y avanzar suavemente en modo Wizard
+    if (form) {
+      const radios = form.querySelectorAll('input[type="radio"]');
+      radios.forEach((radio) => {
+        radio.addEventListener('change', () => {
+          const group = radio.closest('.question-group');
+          if (group) {
+            group.querySelectorAll('.option-label').forEach((lbl) => lbl.classList.remove('selected'));
+            const parentLabel = radio.closest('.option-label');
+            if (parentLabel) parentLabel.classList.add('selected');
+
+            const stepNum = Number(group.getAttribute('data-question-step'));
+            if (this.isWizardMode && stepNum && stepNum < 5) {
+              setTimeout(() => {
+                this.setWizardStep(stepNum + 1);
+              }, 240);
+            }
+          }
+        });
+      });
+    }
+  }
+
+  toggleWizardMode(forceWizard) {
+    this.isWizardMode = typeof forceWizard === 'boolean' ? forceWizard : !this.isWizardMode;
+    const form = document.getElementById('onboarding-form');
+    const btnToggle = document.getElementById('btn-toggle-wizard-mode');
+    const stepLabel = document.getElementById('wizard-step-label');
+
+    if (form) {
+      form.classList.toggle('wizard-mode-active', this.isWizardMode);
+    }
+    if (btnToggle) {
+      btnToggle.textContent = this.isWizardMode ? 'Ver las 5 juntas' : 'Modo Paso a Paso';
+    }
+    if (!this.isWizardMode && stepLabel) {
+      stepLabel.textContent = 'Vista Completa (5/5)';
+    } else {
+      this.setWizardStep(this.currentWizardStep);
+    }
+  }
+
+  setWizardStep(step) {
+    this.currentWizardStep = Math.max(1, Math.min(5, step));
+    const groups = document.querySelectorAll('#onboarding-form .question-group');
+    groups.forEach((g) => {
+      const s = Number(g.getAttribute('data-question-step'));
+      g.classList.toggle('active-wizard-step', s === this.currentWizardStep);
+    });
+
+    const dots = document.querySelectorAll('.wizard-step-dot');
+    dots.forEach((d) => {
+      const s = Number(d.getAttribute('data-step'));
+      d.classList.toggle('active', s === this.currentWizardStep);
+      d.classList.toggle('completed', s < this.currentWizardStep);
+    });
+
+    const fill = document.getElementById('wizard-progress-bar-fill');
+    if (fill) {
+      fill.style.width = `${this.currentWizardStep * 20}%`;
+    }
+
+    const label = document.getElementById('wizard-step-label');
+    if (label && this.isWizardMode) {
+      label.textContent = `Pregunta ${this.currentWizardStep} de 5`;
+    }
+
+    const btnPrev = document.getElementById('btn-wizard-prev');
+    const btnNext = document.getElementById('btn-wizard-next');
+    if (btnPrev) btnPrev.disabled = this.currentWizardStep <= 1;
+    if (btnNext) {
+      btnNext.textContent = this.currentWizardStep === 5 ? '⚡ Calcular Diagnóstico' : 'Siguiente pregunta →';
+    }
+  }
+
+  /**
+   * Sincroniza el selector visual de dificultad (1 a 5)
+   */
+  syncDifficultyWidget(val) {
+    const diffVal = document.getElementById('difficulty-val');
+    if (diffVal) diffVal.textContent = `${val} / 5`;
+
+    const cells = document.querySelectorAll('#interactive-difficulty-cells .level-cell');
+    cells.forEach((c) => {
+      const cellVal = Number(c.getAttribute('data-val'));
+      c.classList.toggle('active', cellVal <= val);
+      c.classList.toggle('high-friction', val >= 4 && cellVal <= val);
+    });
+  }
+
+  /**
+   * Sincroniza la batería interactiva de energía (1 a 5)
+   */
+  syncEnergyBatteryWidget(val) {
+    const energyVal = document.getElementById('energy-val');
+    if (energyVal) {
+      energyVal.textContent = `${val} / 5`;
+      energyVal.style.color = val <= 2 ? 'var(--coral-light)' : (val === 3 ? 'var(--amber-light)' : 'var(--lime-bright)');
+    }
+
+    const container = document.getElementById('interactive-energy-battery');
+    if (container) {
+      container.className = `battery-cells-container level-${val}`;
+      const cells = container.querySelectorAll('.battery-cell');
+      cells.forEach((c) => {
+        const cellVal = Number(c.getAttribute('data-val'));
+        c.classList.toggle('active', cellVal <= val);
+      });
+    }
+  }
+
+  /**
+   * Dispara efecto Skeleton Shimmer en contenedores al cambiar datos
+   */
+  triggerSkeletonShimmer(selector) {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    el.classList.remove('is-skeleton-shimmer');
+    void el.offsetWidth;
+    el.classList.add('is-skeleton-shimmer');
+    setTimeout(() => {
+      el.classList.remove('is-skeleton-shimmer');
+    }, 450);
+  }
+
+  /**
+   * Muestra una notificación Push / WhatsApp simulada dentro de la pantalla del celular
+   */
+  showPhonePushNotification({ icon = '💬', sender = 'ENTRENHÁBITOS', title = '', text = '', theme = '' }) {
+    const banner = document.getElementById('phone-push-notification');
+    if (!banner) return;
+
+    const iconEl = document.getElementById('push-banner-icon');
+    const senderEl = document.getElementById('push-banner-sender');
+    const titleEl = document.getElementById('push-banner-title');
+    const textEl = document.getElementById('push-banner-text');
+
+    if (iconEl) iconEl.textContent = icon;
+    if (senderEl) senderEl.textContent = sender;
+    if (titleEl) titleEl.textContent = title;
+    if (textEl) textEl.textContent = text;
+
+    banner.className = `phone-push-banner visible ${theme}`;
+
+    if (this.pushTimeout) clearTimeout(this.pushTimeout);
+    this.pushTimeout = setTimeout(() => {
+      banner.classList.remove('visible');
+    }, 5200);
   }
 
   /**
@@ -2386,7 +2698,7 @@ class AppController {
   }
 
   /**
-   * Procesa el formulario de onboarding
+   * Procesa el formulario de onboarding (con Skeleton Loading realista antes del reveal)
    */
   handleOnboardingSubmit() {
     const form = document.getElementById('onboarding-form');
@@ -2401,8 +2713,29 @@ class AppController {
       q_version_minima: formData.get('q_version_minima')
     };
 
+    const skeletonEl = document.getElementById('onboarding-skeleton-loader');
+    const contentEl = document.getElementById('onboarding-diagnosis-content');
+
+    if (skeletonEl && contentEl) {
+      skeletonEl.style.display = 'flex';
+      contentEl.style.display = 'none';
+      setTimeout(() => {
+        skeletonEl.style.display = 'none';
+        contentEl.style.display = 'block';
+        contentEl.classList.add('stagger-animate');
+      }, 420);
+    }
+
     const profile = AppState.getActiveProfile();
-    AppState.completeOnboarding(profile.id, answers);
+    const diag = AppState.completeOnboarding(profile.id, answers);
+
+    this.showPhonePushNotification({
+      icon: '🎯',
+      sender: 'DIAGNÓSTICO CONDUCTUAL LISTO',
+      title: `Arquetipo: ${diag.arquetipo}`,
+      text: `Frecuencia calibrada en ${diag.frecuenciaRecomendada} días/sem con Escudo Mínimo activo.`,
+      theme: ''
+    });
 
     this.showToast('⚡ Diagnóstico conductual generado correctamente');
     this.render();
@@ -2565,7 +2898,7 @@ class AppController {
   }
 
   /**
-   * Renderiza Pestaña Mi Plan Dual
+   * Renderiza Pestaña Mi Plan Dual (con Morphing Elástico y Contador de Minutos Animado)
    */
   renderPlanTab(profile) {
     const freqBadge = document.getElementById('plan-frequency-badge');
@@ -2582,13 +2915,17 @@ class AppController {
 
     (plan.dias || []).forEach((d, idx) => {
       const card = document.createElement('div');
-      card.className = 'day-card';
+      card.className = 'day-card stagger-animate';
+      card.style.animationDelay = `${idx * 65}ms`;
       const dayId = `day_${idx}`;
 
       card.innerHTML = `
         <div class="day-card-header">
-          <span class="day-name">${d.dia}</span>
-          <span class="day-tag">${d.nombreSesion || 'Entrenamiento'}</span>
+          <div>
+            <span class="day-name">${d.dia}</span>
+            <span class="day-tag" style="margin-left: 0.35rem;">${d.nombreSesion || 'Entrenamiento'}</span>
+          </div>
+          <span class="day-duration-pill" id="${dayId}_duration_pill">⏱️ ${d.ideal.duracionMin} min</span>
         </div>
 
         <div class="dual-tabs">
@@ -2596,56 +2933,101 @@ class AppController {
             🟢 Versión Ideal (${d.ideal.duracionMin}m)
           </button>
           <button type="button" class="dual-tab-btn minima-tab" data-target="${dayId}_minima">
-            🟡 Versión Mínima (${d.minima.duracionMin}m)
+            🛡️ Versión Mínima (${d.minima.duracionMin}m)
           </button>
         </div>
 
         <div class="day-content">
           <!-- Versión Ideal -->
           <div id="${dayId}_ideal" class="version-block">
-            <span class="version-badge ideal">Versión Completa</span>
+            <span class="version-badge ideal">Versión Completa • 100% Hábito</span>
             <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">${d.ideal.titulo}</h4>
             <ul class="exercise-list">
               ${d.ideal.ejercicios.map((ex) => `<li>${ex}</li>`).join('')}
             </ul>
+            <button type="button" class="btn btn-secondary btn-sm btn-quick-complete-ideal" style="width: 100%; margin-top: 0.85rem;">
+              ✅ Registrar Rutina Ideal (${d.ideal.duracionMin}m)
+            </button>
           </div>
 
           <!-- Versión Mínima (Día Difícil) -->
           <div id="${dayId}_minima" class="version-block" style="display: none;">
-            <span class="version-badge minima">Día Difícil (Rescate)</span>
+            <span class="version-badge minima">🛡️ Escudo Día Difícil • 100% Hábito Salvado</span>
             <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--amber-light); margin-bottom: 0.5rem;">${d.minima.titulo}</h4>
             <ul class="exercise-list minima">
               ${d.minima.ejercicios.map((ex) => `<li>${ex}</li>`).join('')}
             </ul>
-            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem;">
-              ⚡ <em>Completar esta versión preserva el 100% de tu hábito en días complicados.</em>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.65rem;">
+              ⚡ <em>Ejecutar estos ${d.minima.duracionMin} min protege tu continuidad semanal sin culpa.</em>
             </p>
+            <button type="button" class="btn btn-primary btn-sm btn-quick-complete-minima" style="width: 100%; margin-top: 0.75rem; background: linear-gradient(135deg, #fbbf24, #f59e0b);">
+              🛡️ Activar y Registrar Escudo (${d.minima.duracionMin}m)
+            </button>
           </div>
         </div>
       `;
 
-      // Eventos de toggle para las pestañas de versión dual dentro del día
+      // Eventos de toggle para las pestañas de versión dual dentro del día con animación de conteo
       const idealBtn = card.querySelector('.ideal-tab');
       const minimaBtn = card.querySelector('.minima-tab');
       const idealBlock = card.querySelector(`#${dayId}_ideal`);
       const minimaBlock = card.querySelector(`#${dayId}_minima`);
+      const durPill = card.querySelector(`#${dayId}_duration_pill`);
 
       idealBtn.addEventListener('click', () => {
         idealBtn.classList.add('active');
         minimaBtn.classList.remove('active');
+        card.classList.remove('minima-mode-active');
         idealBlock.style.display = 'block';
         minimaBlock.style.display = 'none';
+        this.animateDurationCounter(durPill, d.minima.duracionMin, d.ideal.duracionMin);
       });
 
       minimaBtn.addEventListener('click', () => {
         minimaBtn.classList.add('active');
         idealBtn.classList.remove('active');
+        card.classList.add('minima-mode-active', 'rescue-pulse-active');
+        setTimeout(() => card.classList.remove('rescue-pulse-active'), 800);
         minimaBlock.style.display = 'block';
         idealBlock.style.display = 'none';
+        this.animateDurationCounter(durPill, d.ideal.duracionMin, d.minima.duracionMin);
       });
+
+      const btnQuickIdeal = card.querySelector('.btn-quick-complete-ideal');
+      if (btnQuickIdeal) {
+        btnQuickIdeal.addEventListener('click', () => {
+          this.runScenarioSimulation('completed_ideal');
+        });
+      }
+
+      const btnQuickMinima = card.querySelector('.btn-quick-complete-minima');
+      if (btnQuickMinima) {
+        btnQuickMinima.addEventListener('click', () => {
+          this.runScenarioSimulation('lack_of_time');
+        });
+      }
 
       grid.appendChild(card);
     });
+  }
+
+  /**
+   * Anima el cambio numérico de minutos (ej: 60 min -> 18 min)
+   */
+  animateDurationCounter(el, fromVal, toVal) {
+    if (!el) return;
+    const steps = 10;
+    const diff = toVal - fromVal;
+    let currentStep = 0;
+    const interval = setInterval(() => {
+      currentStep++;
+      const current = Math.round(fromVal + (diff * currentStep) / steps);
+      el.textContent = `⏱️ ${current} min`;
+      if (currentStep >= steps) {
+        clearInterval(interval);
+        el.textContent = `⏱️ ${toVal} min`;
+      }
+    }, 22);
   }
 
   /**
@@ -2693,7 +3075,7 @@ class AppController {
   }
 
   /**
-   * Renderiza Pestaña de Progreso del Alumno y Agendamiento 1-a-1
+   * Renderiza Pestaña de Progreso del Alumno y Agendamiento 1-a-1 (con Anillo SVG Animado y Continuidad)
    */
   renderProgressTab(profile) {
     // Badges y Métricas
@@ -2704,15 +3086,78 @@ class AppController {
       riskBadge.textContent = r === 'rojo' ? '🔴 Riesgo Alto' : (r === 'amarillo' ? '🟡 Riesgo Medio' : '🟢 Riesgo Bajo');
     }
 
+    const adhScore = profile.scoreAdherencia ?? 0;
+    const salvatajeScore = profile.tasaSalvatajeMinima ?? 0;
+
     const adhVal = document.getElementById('metric-adherence-val');
     const salVal = document.getElementById('metric-salvataje-val');
     const mttrVal = document.getElementById('metric-mttr-val');
     const rachaVal = document.getElementById('metric-racha-val');
 
-    if (adhVal) adhVal.textContent = `${profile.scoreAdherencia ?? 0}%`;
-    if (salVal) salVal.textContent = `${profile.tasaSalvatajeMinima ?? 0}%`;
+    if (adhVal) adhVal.textContent = `${adhScore}%`;
+    if (salVal) salVal.textContent = `${salvatajeScore}%`;
     if (mttrVal) mttrVal.textContent = `${profile.mttrDias ?? 1.0} d`;
     if (rachaVal) rachaVal.textContent = `${profile.rachaActualSemanas ?? 0} sem`;
+
+    // Renderizar Visualización Analítica: Anillo SVG Dual + Línea de Continuidad "Never Miss Twice"
+    const visualContainer = document.getElementById('progress-visual-analytics');
+    if (visualContainer) {
+      const radiusOuter = 42;
+      const circumOuter = 2 * Math.PI * radiusOuter;
+      const offsetOuter = circumOuter - (adhScore / 100) * circumOuter;
+
+      const radiusInner = 30;
+      const circumInner = 2 * Math.PI * radiusInner;
+      const offsetInner = circumInner - (salvatajeScore / 100) * circumInner;
+
+      const checkins = profile.historialCheckins || [];
+      const recentNodes = checkins.slice(-6).map((chk, idx) => {
+        const icon = chk.estado === 'ideal' ? '🟢' : (chk.estado === 'minima' ? '🛡️' : '🔄');
+        const label = chk.estado === 'ideal' ? 'Ideal' : (chk.estado === 'minima' ? 'Mínima' : 'Pausa');
+        const shortDate = (chk.fecha || '').slice(5) || `S${idx + 1}`;
+        return `
+          <div class="timeline-node ${chk.estado}" title="${chk.fecha}: ${label}">
+            <span style="font-size: 1rem;">${icon}</span>
+            <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-primary);">${label}</span>
+            <span style="font-size: 0.6rem; color: var(--text-muted);">${shortDate}</span>
+          </div>
+        `;
+      }).join('');
+
+      visualContainer.innerHTML = `
+        <div class="svg-ring-card">
+          <div class="svg-ring-wrapper">
+            <svg class="adherence-svg-ring" viewBox="0 0 100 100">
+              <circle class="ring-bg" cx="50" cy="50" r="${radiusOuter}"></circle>
+              <circle class="ring-bg" cx="50" cy="50" r="${radiusInner}" style="stroke-width: 6;"></circle>
+              <circle class="ring-fill-total" cx="50" cy="50" r="${radiusOuter}"
+                stroke-dasharray="${circumOuter.toFixed(1)}"
+                stroke-dashoffset="${offsetOuter.toFixed(1)}"></circle>
+              <circle class="ring-fill-rescue" cx="50" cy="50" r="${radiusInner}"
+                stroke-dasharray="${circumInner.toFixed(1)}"
+                stroke-dashoffset="${offsetInner.toFixed(1)}"></circle>
+            </svg>
+            <div>
+              <div style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Anillo Dual de Hábito</div>
+              <div style="font-size: 1.45rem; font-weight: 800; color: var(--lime-bright); line-height: 1.15;">${adhScore}% Total</div>
+              <div style="font-size: 0.75rem; color: var(--amber-light); font-weight: 700; margin-top: 0.2rem;">🛡️ ${salvatajeScore}% Salvado por Mínima</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="continuity-timeline-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+            <span style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; color: var(--text-primary);">
+              🔗 Huella de Continuidad ("Never Miss Twice")
+            </span>
+            <span class="badge badge-cyan" style="font-size: 0.65rem;">${profile.idealCount || 0} Ideales • ${profile.minimaCount || 0} Escudos</span>
+          </div>
+          <div class="timeline-nodes-row">
+            ${recentNodes || '<span style="font-size: 0.8rem; color: var(--text-muted);">Registrá tu primera sesión para activar la línea de continuidad.</span>'}
+          </div>
+        </div>
+      `;
+    }
 
     // Historial de Checkins
     const tbody = document.getElementById('student-checkins-history-tbody');

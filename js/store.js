@@ -263,6 +263,19 @@ export class AppStateStore {
       throw new Error('Barrera obligatoria: Si la sesión fue mínima o no entrenó, se debe registrar la barrera que causó la dificultad.');
     }
 
+    // Determinar fecha coherente con la línea temporal del perfil si no se especifica explícitamente
+    let defaultDate = new Date().toISOString().split('T')[0];
+    if (profile.historialCheckins && profile.historialCheckins.length > 0) {
+      const lastChk = profile.historialCheckins[profile.historialCheckins.length - 1];
+      if (lastChk && lastChk.fecha) {
+        const lastDateObj = new Date(`${lastChk.fecha}T12:00:00Z`);
+        if (!isNaN(lastDateObj.getTime())) {
+          lastDateObj.setUTCDate(lastDateObj.getUTCDate() + 2);
+          defaultDate = lastDateObj.toISOString().split('T')[0];
+        }
+      }
+    }
+
     // Ejecutar motor de reglas adaptativo
     const context = {
       status,
@@ -270,7 +283,7 @@ export class AppStateStore {
       energyLevel: checkInData.energyLevel ?? checkInData.energia ?? 3,
       difficulty: checkInData.difficulty ?? checkInData.dificultad ?? 3,
       timeSpent: checkInData.timeSpent ?? checkInData.tiempoRealMin ?? (status === 'ideal' ? 55 : status === 'minima' ? 18 : 0),
-      date: checkInData.date || checkInData.fecha || new Date().toISOString().split('T')[0]
+      date: checkInData.date || checkInData.fecha || defaultDate
     };
 
     const recommendation = RulesEngine.evaluate(context, profile);

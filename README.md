@@ -30,7 +30,8 @@ c:\Users\lauta\Proyectos\PROYECTO ENTRENHABITOS\
 │   ├── R1_DISENO_CONDUCTUAL_E_INNOVACION.md         # [R1] Análisis Crítico, Psicología del Hábito e Ideación (733 líneas)
 │   ├── R2_SRS_REQUERIMIENTOS_Y_MODELADO.md          # [R2] Ingeniería de Requerimientos SRS IEEE/ISO (1.138 líneas)
 │   ├── R3_DIRECCION_DE_PROYECTO_Y_ROADMAP.md        # [R3] Plan Director de Proyecto, WBS, Riesgos y KPIs (738 líneas)
-│   └── R5_ELICITACION_Y_DESCUBRIMIENTO_PRODUCTO.md  # [R5] Cuestionario de Elicitación con el Cliente + Matriz de Decisiones e Ideas
+│   ├── R5_ELICITACION_Y_DESCUBRIMIENTO_PRODUCTO.md  # [R5] Cuestionario de Elicitación con el Cliente + Matriz de Decisiones e Ideas
+│   └── R6_ARQUITECTURA_TECNICA_REACT_SQL.md         # [R6] Arquitectura de Producción: JS, React, React Native + Base de Datos SQL
 ├── index.html                                       # [R4] Prototipo Web Interactivo (Vista Alumno + Vista Coach)
 ├── css\
 │   └── styles.css                                   # Sistema de diseño "Athletic Precision" (Dark Slate, Lima, Ámbar, Coral)
@@ -68,6 +69,10 @@ c:\Users\lauta\Proyectos\PROYECTO ENTRENHABITOS\
 4. **[`docs/R5_ELICITACION_Y_DESCUBRIMIENTO_PRODUCTO.md`](docs/R5_ELICITACION_Y_DESCUBRIMIENTO_PRODUCTO.md) — Guía de Elicitación de Requerimientos y Matriz de Decisiones de Producto (R5)**
    - **Cuestionario estructurado en 7 bloques (18 preguntas clave)** para entrevistar al cliente/creador del método y descubrir reglas de negocio implícitas sobre el modelo 1-a-1, alcance de rutinas, umbrales de la versión mínima, prevención del abandono silencioso y validación de intervenciones.
    - **Matriz de Decisiones de Producto** (Enfoque Ligero MVP vs. Enfoque Avanzado) y **6 Ideas Diferenciadoras** (*Termómetro Pre-Entreno*, *Día Comodín*, *Trofeo de Velocidad de Retorno*, *Selector de Batería Diaria*, *Acuerdos de Entrevista Fijados* y *Borrón y Cuenta Nueva Anti-Ghosting*).
+
+5. **[`docs/R6_ARQUITECTURA_TECNICA_REACT_SQL.md`](docs/R6_ARQUITECTURA_TECNICA_REACT_SQL.md) — Arquitectura Técnica de Producción: JavaScript, React / React Native y Base de Datos SQL (R6)**
+   - **Arquitectura Full-Stack JavaScript (Monorepo):** App Móvil para el Alumno en **React Native + Expo**, Panel Profesional para el Entrenador en **React.js Web**, y paquete compartido `@entrenhabitos/core` reutilizando `rules_engine.js`.
+   - **Diseño del Modelo Relacional SQL (PostgreSQL):** Diagrama Entidad-Relación (DER), script DDL completo de las 9 tablas transaccionales y analíticas (`usuarios`, `perfiles_adherencia`, `planes_semanales`, `sesiones_plan_dual`, `checkins_adherencia`, `intervenciones_aplicadas`, `pesos_intervenciones_usuario`, `entrevistas_1a1`) y consultas SQL analíticas para el Panel del Coach.
 
 ---
 
