@@ -1975,6 +1975,9 @@ class AppController {
   }
 
   init() {
+    if (typeof window !== 'undefined' && (window.location.search.includes('platform=android_apk') || window.ENTRENHABITOS_ANDROID_APK)) {
+      document.body.classList.add('native-android-apk');
+    }
     this.bindEvents();
     this.startCheckinTimer();
     this.switchRole('mobile');
@@ -2098,7 +2101,53 @@ class AppController {
       });
     }
 
-    // 4f. Controles del Wizard de Onboarding Paso a Paso
+    // 4f. Controles del Cajón Móvil de Simulación (para uso nativo dentro del Celular / APK Android)
+    const btnToggleSimDrawer = document.getElementById('btn-phone-toggle-sim-drawer');
+    const inlineSimDrawer = document.getElementById('phone-inline-sim-drawer');
+    if (btnToggleSimDrawer && inlineSimDrawer) {
+      btnToggleSimDrawer.addEventListener('click', () => {
+        const isHidden = inlineSimDrawer.style.display === 'none';
+        inlineSimDrawer.style.display = isHidden ? 'block' : 'none';
+      });
+    }
+
+    const inlineProfileSelect = document.getElementById('phone-inline-profile-select');
+    if (inlineProfileSelect) {
+      inlineProfileSelect.addEventListener('change', (e) => {
+        AppState.setActiveProfile(e.target.value);
+        this.inspectedCoachStudentId = e.target.value;
+        this.triggerSkeletonShimmer('#phone-viewport-scroll');
+        const active = AppState.getActiveProfile();
+        this.showToast(`Perfil activo: ${active.nombre}`);
+      });
+    }
+
+    const btnPhoneCoach = document.getElementById('btn-phone-switch-to-coach');
+    if (btnPhoneCoach) {
+      btnPhoneCoach.addEventListener('click', () => {
+        this.switchRole('coach');
+        if (inlineSimDrawer) inlineSimDrawer.style.display = 'none';
+      });
+    }
+
+    const btnCoachBackMobile = document.getElementById('btn-coach-back-to-mobile');
+    if (btnCoachBackMobile) {
+      btnCoachBackMobile.addEventListener('click', () => {
+        this.switchRole('mobile');
+      });
+    }
+
+    const btnPhoneReset = document.getElementById('btn-phone-reset-demo');
+    if (btnPhoneReset) {
+      btnPhoneReset.addEventListener('click', () => {
+        AppState.resetDemoData();
+        this.inspectedCoachStudentId = 'alumno_martin';
+        this.setWizardStep(1);
+        this.showToast('↺ Demo reiniciado');
+      });
+    }
+
+    // 4g. Controles del Wizard de Onboarding Paso a Paso
     this.bindWizardEvents();
 
     // 5. Botones táctiles de estado de Check-in
@@ -2798,6 +2847,11 @@ class AppController {
     const select = document.getElementById('global-profile-select');
     if (select && select.value !== activeProfile.id) {
       select.value = activeProfile.id;
+    }
+
+    const inlineSelect = document.getElementById('phone-inline-profile-select');
+    if (inlineSelect && inlineSelect.value !== activeProfile.id) {
+      inlineSelect.value = activeProfile.id;
     }
 
     const streakText = document.getElementById('header-streak-text');

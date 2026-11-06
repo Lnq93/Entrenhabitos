@@ -2,8 +2,13 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#090d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Entrenhábitos — Prototipo Interactivo R4 (Método de Adherencia)</title>
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
 </head>
@@ -52,6 +57,10 @@
         <div id="header-streak-badge" class="streak-pill" title="Racha protegida: contabiliza versiones mínimas y no se pierde por 1 tropiezo">
           🔥 <span id="header-streak-text">4 semanas</span>
         </div>
+
+        <a href="Entrenhabitos-Prototipo.apk" download class="btn-apk-download" title="Descargar aplicación nativa de Android (.apk)">
+          🤖 Descargar APK
+        </a>
 
         <button id="btn-reset-demo" class="btn-reset-demo" title="Restaurar los 4 perfiles y datos de demostración a su estado inicial">
           ↺ Reiniciar Demo
@@ -105,9 +114,35 @@
                 <div id="phone-header-archetype" class="phone-user-archetype">Perfeccionista / Todo o Nada</div>
               </div>
             </div>
-            <button type="button" id="btn-phone-quick-sos" class="btn-phone-sos" title="Activar modo rescate de 15-20 min para días difíciles">
-              🛡️ Escudo 18m
-            </button>
+            <div style="display: flex; align-items: center; gap: 0.35rem;">
+              <button type="button" id="btn-phone-toggle-sim-drawer" class="btn-phone-drawer-toggle" title="Abrir simulador rápido y cambio de perfil">
+                🧪 Simular
+              </button>
+              <button type="button" id="btn-phone-quick-sos" class="btn-phone-sos" title="Activar modo rescate de 15-20 min para días difíciles">
+                🛡️ Escudo 18m
+              </button>
+            </div>
+          </div>
+
+          <!-- Cajón Plegable de Simulación y Cambio de Perfil dentro de la App Móvil -->
+          <div id="phone-inline-sim-drawer" class="phone-inline-drawer phone-only-chrome" style="display: none;">
+            <div class="drawer-row">
+              <span class="drawer-label">Cambiar Alumno:</span>
+              <select id="phone-inline-profile-select" class="drawer-select">
+                <option value="alumno_martin">Martín Rossi (Todo o Nada)</option>
+                <option value="alumno_lucia">Lucía Méndez (Fatiga Mental)</option>
+                <option value="alumno_carlos">Carlos Gómez (Turnos Caóticos)</option>
+                <option value="alumno_sofia">Sofía Pereira (Nuevo Ingreso)</option>
+              </select>
+            </div>
+            <div class="drawer-chips-row">
+              <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="lack_of_time">⏰ Salí tarde (18m)</button>
+              <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="low_energy">🔋 Baja energía (2m)</button>
+              <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="missed_guilt">🔴 Falté hoy</button>
+              <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="completed_ideal">🟢 Rutina Ideal</button>
+              <button type="button" id="btn-phone-switch-to-coach" class="drawer-sim-chip cyan">📋 Panel Coach</button>
+              <button type="button" id="btn-phone-reset-demo" class="drawer-sim-chip">↺ Reset</button>
+            </div>
           </div>
       
           <!-- Sub-navegación de Alumno (visible en modo Web con iconos SVG limpios) -->
@@ -804,6 +839,13 @@
          VISTA 2: COACH / PANEL DE SEGUIMIENTO PROFESIONAL
          ======================================================================== -->
     <div id="view-coach" class="view-section">
+      <!-- Barra de retorno rápido para vista en Celular / APK -->
+      <div class="mobile-coach-return-bar">
+        <span style="font-size: 0.8rem; font-weight: 800; color: var(--cyan-primary);">📋 PANEL DEL ENTRENADOR</span>
+        <button type="button" id="btn-coach-back-to-mobile" class="btn btn-primary btn-sm">
+          📱 Volver a App Alumno
+        </button>
+      </div>
       
       <!-- Métricas Agregadas de la Cohorte -->
       <div class="coach-header-stats">
