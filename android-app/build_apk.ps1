@@ -41,7 +41,7 @@ Write-Host "3. Compilando recursos con aapt2..." -ForegroundColor Cyan
 Write-Host "4. Compilando código Java (MainActivity + R.java) con JDK 17..." -ForegroundColor Cyan
 $JavaFiles = @(
   (Join-Path $AndroidDir "src\com\entrenhabitos\prototipo\MainActivity.java"),
-  (Join-Path $BuildDir "gen\com\entrenhabitos\prototipo\R.java")
+  (Join-Path $BuildDir "gen\com\entrenhabitos\app\R.java")
 )
 & $Javac -encoding UTF-8 --release 11 -classpath $AndroidJar -d "$BuildDir\obj" $JavaFiles
 
@@ -57,17 +57,19 @@ Pop-Location
 Write-Host "7. Alineando APK con zipalign..." -ForegroundColor Cyan
 & $Zipalign -f -p 4 "$BuildDir\unaligned.apk" "$BuildDir\aligned.apk"
 
-Write-Host "8. Firmando APK con apksigner (v1 + v2 + v3)..." -ForegroundColor Cyan
-$Keystore = Join-Path $BuildDir "debug.keystore"
-& $Keytool -genkeypair -v `
-  -keystore $Keystore `
-  -storepass android `
-  -alias androiddebugkey `
-  -keypass android `
-  -keyalg RSA `
-  -keysize 2048 `
-  -validity 10000 `
-  -dname "CN=Entrenhabitos, OU=Mobile, O=Entrenhabitos, L=BuenosAires, S=BA, C=AR" | Out-Null
+Write-Host "8. Firmando APK con llave persistente (entrenhabitos-release.keystore)..." -ForegroundColor Cyan
+$Keystore = Join-Path $AndroidDir "entrenhabitos-release.keystore"
+if (-not (Test-Path $Keystore)) {
+  & $Keytool -genkeypair -v `
+    -keystore $Keystore `
+    -storepass android `
+    -alias entrenhabitoskey `
+    -keypass android `
+    -keyalg RSA `
+    -keysize 2048 `
+    -validity 10000 `
+    -dname "CN=Entrenhabitos, OU=Mobile, O=Entrenhabitos, L=BuenosAires, S=BA, C=AR" | Out-Null
+}
 
 $FinalApk = Join-Path $RootDir "Entrenhabitos-Prototipo.apk"
 & $Apksigner sign `

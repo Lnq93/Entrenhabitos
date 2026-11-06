@@ -1900,6 +1900,101 @@ class AppStateStore {
   }
 
   /**
+   * Aplica una intervención directa del Coach sobre el plan o estado del Alumno (Coach -> Cliente)
+   */
+  applyCoachIntervention(profileId, actionType, customNote = '') {
+    const targetId = profileId || this.activeProfileId;
+    const profile = this.profiles.find((p) => p.id === targetId);
+    if (!profile) throw new Error(`Perfil ${targetId} no encontrado`);
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (actionType === 'minima_week') {
+      profile.coachPrescription = {
+        type: 'minima_week',
+        title: '🛡️ Semana de Descarga Activada por tu Coach',
+        message: customNote || 'Tu Coach activó el Modo Versión Mínima (15-20 min) como meta principal de esta semana para proteger tu continuidad sin sobrecarga.',
+        timestamp: timeStr
+      };
+      if (profile.planSemanal && Array.isArray(profile.planSemanal.dias)) {
+        profile.planSemanal.preferMinima = true;
+        profile.planSemanal.dias = profile.planSemanal.dias.map((day) => ({
+          ...day,
+          preferMinima: true
+        }));
+      }
+    } else if (actionType === 'calibrate_2d') {
+      profile.frecuenciaObjetivo = 2;
+      profile.planSemanal = RulesEngine.buildDefaultPlan(2);
+      profile.coachPrescription = {
+        type: 'calibrate_2d',
+        title: '🎯 Plan Recalibrado a 2 Días Blindados por tu Coach',
+        message: customNote || 'Tu Coach ajustó tu frecuencia semanal a 2 sesiones clave para garantizar un piso sostenible del 100% en semanas intensas.',
+        timestamp: timeStr
+      };
+    } else {
+      profile.coachPrescription = {
+        type: 'empathetic_nudge',
+        title: '💬 Mensaje Directo de tu Coach 1-a-1',
+        message: customNote || `¡Hola ${profile.nombre.split(' ')[0]}! Vi que esta semana estuvo pesada. Hoy con 15 minutos en Versión Mínima salvamos el 100% de tu racha. Cero culpa 💪.`,
+        timestamp: timeStr
+      };
+    }
+
+    this.saveToStorage();
+    this.notifyListeners('coach-intervention-applied', {
+      profileId: targetId,
+      actionType,
+      prescription: profile.coachPrescription
+    });
+    return this.getProfileById(targetId);
+  }
+
+  /**
+   * Guarda una nota clínica de seguimiento 1-a-1 desde la app móvil del Coach
+   */
+  saveCoachSessionNote(profileId, noteText, checkedCount = 0) {
+    const targetId = profileId || this.activeProfileId;
+    const profile = this.profiles.find((p) => p.id === targetId);
+    if (!profile) throw new Error(`Perfil ${targetId} no encontrado`);
+
+    if (!Array.isArray(profile.notasCoach)) {
+      profile.notasCoach = [];
+    }
+    const entry = {
+      id: `note_${Date.now()}`,
+      fecha: new Date().toISOString().split('T')[0],
+      texto: noteText,
+      puntosAbordados: checkedCount
+    };
+    profile.notasCoach.unshift(entry);
+    this.saveToStorage();
+    this.notifyListeners('coach-note-saved', { profileId: targetId, entry });
+    return entry;
+  }
+
+  /**
+   * Confirma o marca como prioritaria una sesión 1-a-1 desde la vista móvil del Coach
+   */
+  confirmInterviewRequest(requestId) {
+    const req = this.interviewRequests.find((r) => r.id === requestId);
+    if (!req) return null;
+    req.status = 'confirmada_coach';
+    const profile = this.profiles.find((p) => p.id === req.profileId);
+    if (profile) {
+      profile.coachPrescription = {
+        type: 'interview_confirmed',
+        title: '📅 Turno 1-a-1 Confirmado por tu Coach',
+        message: `Tu sesión 1-a-1 del ${req.fecha} a las ${req.hora} hs fue confirmada con tu ficha conductual lista.`,
+        timestamp: 'ahora'
+      };
+    }
+    this.saveToStorage();
+    this.notifyListeners('interview-confirmed', { request: req });
+    return req;
+  }
+
+  /**
    * Restaura el dataset demo de los 4 perfiles arquetípicos a su estado de fábrica
    */
   resetDemoData() {
@@ -1963,7 +2058,9 @@ if (typeof window !== 'undefined') {
 class AppController {
   constructor() {
     this.currentRole = 'mobile'; // 'mobile' | 'split' | 'student' | 'coach'
+    this.currentPhoneMode = 'student'; // 'student' | 'coach' (dentro del celular)
     this.currentStudentTab = 'onboarding'; // 'onboarding' | 'plan' | 'checkin' | 'adaptive' | 'progress'
+    this.currentMobileCoachTab = 'cohort'; // 'cohort' | 'dossier' | 'talking' | 'agenda'
     this.selectedCheckinStatus = 'ideal';
     this.selectedBarrierId = null;
     this.timerInterval = null;
@@ -1972,6 +2069,8 @@ class AppController {
     this.currentWizardStep = 1;
     this.isWizardMode = true;
     this.pushTimeout = null;
+    this.checkedTalkingPoints = {};
+    this.coachUnreadAlerts = 1;
   }
 
   init() {
@@ -1980,9 +2079,22 @@ class AppController {
     }
     if (typeof window !== 'undefined') {
       window.handleAndroidBackButton = () => {
+        const roleModal = document.getElementById('role-launcher-modal');
+        if (roleModal && roleModal.style.display !== 'none') {
+          roleModal.style.display = 'none';
+          return 'CONSUMED';
+        }
         const inlineDrawer = document.getElementById('phone-inline-sim-drawer');
         if (inlineDrawer && inlineDrawer.style.display !== 'none') {
           inlineDrawer.style.display = 'none';
+          return 'CONSUMED';
+        }
+        if (this.currentPhoneMode === 'coach') {
+          if (this.currentMobileCoachTab !== 'cohort') {
+            this.switchMobileCoachTab('cohort');
+            return 'CONSUMED';
+          }
+          this.switchPhoneMode('student');
           return 'CONSUMED';
         }
         if (this.currentRole !== 'mobile') {
@@ -2002,6 +2114,9 @@ class AppController {
 
     // Suscripción a cambios del Store reactivo
     AppState.subscribe((event) => {
+      if (event.action === 'checkin-submitted' || event.action === 'interview-scheduled') {
+        this.coachUnreadAlerts += 1;
+      }
       this.render();
       if (event.action === 'checkin-submitted') {
         this.switchStudentTab('adaptive');
@@ -2154,7 +2269,7 @@ class AppController {
     const btnPhoneCoach = document.getElementById('btn-phone-switch-to-coach');
     if (btnPhoneCoach) {
       btnPhoneCoach.addEventListener('click', () => {
-        this.switchRole('coach');
+        this.switchPhoneMode('coach');
         if (inlineSimDrawer) inlineSimDrawer.style.display = 'none';
       });
     }
@@ -2163,6 +2278,7 @@ class AppController {
     if (btnCoachBackMobile) {
       btnCoachBackMobile.addEventListener('click', () => {
         this.switchRole('mobile');
+        this.switchPhoneMode('student');
       });
     }
 
@@ -2171,8 +2287,171 @@ class AppController {
       btnPhoneReset.addEventListener('click', () => {
         AppState.resetDemoData();
         this.inspectedCoachStudentId = 'alumno_martin';
+        this.checkedTalkingPoints = {};
+        this.coachUnreadAlerts = 1;
         this.setWizardStep(1);
         this.showToast('↺ Demo reiniciado');
+      });
+    }
+
+    // 4h. IDEA A + B + C + D: Switch Nativo Móvil (Vista Cliente vs Vista Coach Móvil)
+    const btnModeStudent = document.getElementById('btn-phone-mode-student');
+    const btnModeCoach = document.getElementById('btn-phone-mode-coach');
+    if (btnModeStudent) {
+      btnModeStudent.addEventListener('click', () => this.switchPhoneMode('student'));
+    }
+    if (btnModeCoach) {
+      btnModeCoach.addEventListener('click', () => this.switchPhoneMode('coach'));
+    }
+
+    const btnCoachMobileBackStudent = document.getElementById('btn-coach-mobile-back-student');
+    if (btnCoachMobileBackStudent) {
+      btnCoachMobileBackStudent.addEventListener('click', () => {
+        if (this.inspectedCoachStudentId) {
+          AppState.setActiveProfile(this.inspectedCoachStudentId);
+        }
+        this.switchPhoneMode('student');
+      });
+    }
+
+    // Barra inferior de 4 pestañas de la App Móvil del Coach (Idea B)
+    const coachMobileNavBtns = document.querySelectorAll('.phone-coach-nav-item');
+    coachMobileNavBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-coach-tab');
+        if (tab) this.switchMobileCoachTab(tab);
+      });
+    });
+
+    // Acciones directas de intervención Coach -> Cliente (Idea C)
+    const btnMcoachNudge = document.getElementById('btn-mcoach-action-nudge');
+    if (btnMcoachNudge) {
+      btnMcoachNudge.addEventListener('click', () => {
+        const target = AppState.applyCoachIntervention(this.inspectedCoachStudentId, 'empathetic_nudge');
+        AppState.setActiveProfile(target.id);
+        this.showPhonePushNotification({
+          icon: '💬',
+          sender: 'MENSAJE DIRECTO DE TU COACH',
+          title: `¡Hola ${target.nombre.split(' ')[0]}! Cero culpa hoy`,
+          text: 'Con 15 min de Versión Mínima salvamos el 100% de tu semana 💪.',
+          theme: 'cyan-theme'
+        });
+        this.showToast(`📲 Rescate enviado al celular de ${target.nombre}`);
+      });
+    }
+
+    const btnMcoachMinimaWeek = document.getElementById('btn-mcoach-action-minima-week');
+    if (btnMcoachMinimaWeek) {
+      btnMcoachMinimaWeek.addEventListener('click', () => {
+        const target = AppState.applyCoachIntervention(this.inspectedCoachStudentId, 'minima_week');
+        AppState.setActiveProfile(target.id);
+        this.showPhonePushNotification({
+          icon: '🛡️',
+          sender: 'RECETA DE TU COACH • EN VIVO',
+          title: 'Semana de Descarga Activada',
+          text: `Tu Plan Dual pasó a Versión Mínima (15-20m) para proteger tu racha sin estrés.`,
+          theme: 'amber-theme'
+        });
+        this.showToast(`🛡️ Semana de Descarga activada para ${target.nombre}`);
+      });
+    }
+
+    const btnMcoachCalibrate2d = document.getElementById('btn-mcoach-action-calibrate-2d');
+    if (btnMcoachCalibrate2d) {
+      btnMcoachCalibrate2d.addEventListener('click', () => {
+        const target = AppState.applyCoachIntervention(this.inspectedCoachStudentId, 'calibrate_2d');
+        AppState.setActiveProfile(target.id);
+        this.showPhonePushNotification({
+          icon: '🎯',
+          sender: 'AJUSTE DE PLAN • COACH 1-A-1',
+          title: 'Frecuencia calibrada a 2 días blindados',
+          text: 'Priorizamos continuidad sostenible del 100% esta semana.',
+          theme: 'cyan-theme'
+        });
+        this.showToast(`🎯 Plan de ${target.nombre} calibrado a 2 días blindados`);
+      });
+    }
+
+    // Banner de Receta del Coach en la Vista Cliente (Idea C)
+    const btnRxOpenPlan = document.getElementById('btn-rx-open-plan');
+    if (btnRxOpenPlan) {
+      btnRxOpenPlan.addEventListener('click', () => {
+        this.switchStudentTab('plan');
+      });
+    }
+
+    const btnRxDismiss = document.getElementById('btn-rx-dismiss');
+    if (btnRxDismiss) {
+      btnRxDismiss.addEventListener('click', () => {
+        const banner = document.getElementById('student-coach-prescription-banner');
+        if (banner) banner.style.display = 'none';
+      });
+    }
+
+    // Formulario de acuerdo rápido en Guion 1-a-1 del Coach Móvil
+    const mcoachNoteForm = document.getElementById('mcoach-note-form');
+    if (mcoachNoteForm) {
+      mcoachNoteForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('mcoach-session-note-input');
+        const text = input ? input.value.trim() : '';
+        if (!text) return;
+        const checkedCount = Object.values(this.checkedTalkingPoints[this.inspectedCoachStudentId] || {}).filter(Boolean).length;
+        AppState.saveCoachSessionNote(this.inspectedCoachStudentId, text, checkedCount);
+        if (input) input.value = '';
+        this.showToast('📝 Acuerdo de sesión 1-a-1 guardado en la ficha');
+      });
+    }
+
+    // Idea D: Modal / Sheet de Presentación ("🎭 Demo")
+    const roleModal = document.getElementById('role-launcher-modal');
+    const btnOpenLauncher = document.getElementById('btn-open-role-launcher');
+    const btnCloseLauncher = document.getElementById('btn-close-role-launcher');
+    if (btnOpenLauncher && roleModal) {
+      btnOpenLauncher.addEventListener('click', () => {
+        roleModal.style.display = roleModal.style.display === 'none' ? 'flex' : 'none';
+      });
+    }
+    if (btnCloseLauncher && roleModal) {
+      btnCloseLauncher.addEventListener('click', () => {
+        roleModal.style.display = 'none';
+      });
+    }
+
+    const launchStudentBtns = document.querySelectorAll('[data-launch-student]');
+    launchStudentBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const studentId = btn.getAttribute('data-launch-student');
+        if (studentId) {
+          AppState.setActiveProfile(studentId);
+          this.inspectedCoachStudentId = studentId;
+          this.switchPhoneMode('student');
+          if (roleModal) roleModal.style.display = 'none';
+          const active = AppState.getActiveProfile();
+          this.showToast(`🏋️‍♂️ Vista Cliente: ${active.nombre}`);
+        }
+      });
+    });
+
+    const btnLaunchCoach = document.getElementById('btn-launcher-enter-coach');
+    if (btnLaunchCoach) {
+      btnLaunchCoach.addEventListener('click', () => {
+        this.switchPhoneMode('coach');
+        if (roleModal) roleModal.style.display = 'none';
+        this.showToast('📋 Vista Coach Móvil activada');
+      });
+    }
+
+    const btnLauncherReset = document.getElementById('btn-launcher-reset-demo');
+    if (btnLauncherReset) {
+      btnLauncherReset.addEventListener('click', () => {
+        AppState.resetDemoData();
+        this.inspectedCoachStudentId = 'alumno_martin';
+        this.checkedTalkingPoints = {};
+        this.coachUnreadAlerts = 1;
+        this.setWizardStep(1);
+        if (roleModal) roleModal.style.display = 'none';
+        this.showToast('↺ Todos los perfiles y métricas restaurados');
       });
     }
 
@@ -2866,6 +3145,69 @@ class AppController {
   }
 
   /**
+   * Cambia entre las dos vistas móviles nativas dentro del celular: 'student' (Vista Cliente) y 'coach' (Vista Coach Móvil)
+   */
+  switchPhoneMode(mode) {
+    this.currentPhoneMode = mode === 'coach' ? 'coach' : 'student';
+
+    const btnStudent = document.getElementById('btn-phone-mode-student');
+    const btnCoach = document.getElementById('btn-phone-mode-coach');
+    const wrapperStudent = document.getElementById('phone-student-app-wrapper');
+    const wrapperCoach = document.getElementById('phone-coach-app-wrapper');
+
+    if (btnStudent) {
+      btnStudent.classList.toggle('active', this.currentPhoneMode === 'student');
+      btnStudent.setAttribute('aria-selected', this.currentPhoneMode === 'student' ? 'true' : 'false');
+    }
+    if (btnCoach) {
+      btnCoach.classList.toggle('active', this.currentPhoneMode === 'coach');
+      btnCoach.setAttribute('aria-selected', this.currentPhoneMode === 'coach' ? 'true' : 'false');
+    }
+
+    if (wrapperStudent) {
+      wrapperStudent.style.display = this.currentPhoneMode === 'student' ? 'flex' : 'none';
+    }
+    if (wrapperCoach) {
+      wrapperCoach.style.display = this.currentPhoneMode === 'coach' ? 'flex' : 'none';
+    }
+
+    if (this.currentPhoneMode === 'coach') {
+      this.coachUnreadAlerts = 0;
+    }
+
+    this.render();
+  }
+
+  /**
+   * Cambia la pestaña activa dentro de la App Móvil del Coach (Semáforo, Ficha 360°, Guion 1-a-1, Turnos)
+   */
+  switchMobileCoachTab(tabName) {
+    this.currentMobileCoachTab = tabName;
+
+    const navBtns = document.querySelectorAll('.phone-coach-nav-item');
+    navBtns.forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-coach-tab') === tabName);
+    });
+
+    const tabs = [
+      { id: 'tab-coach-mobile-cohort', name: 'cohort' },
+      { id: 'tab-coach-mobile-dossier', name: 'dossier' },
+      { id: 'tab-coach-mobile-talking', name: 'talking' },
+      { id: 'tab-coach-mobile-agenda', name: 'agenda' }
+    ];
+
+    tabs.forEach((t) => {
+      const el = document.getElementById(t.id);
+      if (el) el.style.display = t.name === tabName ? 'block' : 'none';
+    });
+
+    const scrollEl = document.getElementById('phone-coach-viewport-scroll');
+    if (scrollEl) scrollEl.scrollTop = 0;
+
+    this.renderMobileCoachView();
+  }
+
+  /**
    * Renderizado general de toda la aplicación
    */
   render() {
@@ -2895,17 +3237,45 @@ class AppController {
     if (phoneName) phoneName.textContent = activeProfile.nombre;
     if (phoneArch) phoneArch.textContent = activeProfile.arquetipo || 'Evaluación Pendiente';
 
-    // 2. Renderizar Vista Alumno
+    // 2. Renderizar Banner de Intervención del Coach en Vista Cliente (Idea C)
+    this.renderStudentCoachPrescription(activeProfile);
+
+    // 3. Renderizar Vista Alumno
     this.renderOnboardingTab(activeProfile);
     this.renderPlanTab(activeProfile);
     this.renderAdaptiveTab(activeProfile);
     this.renderProgressTab(activeProfile);
 
-    // 3. Renderizar Espejo en Vivo del Panel de Simulación
+    // 4. Renderizar Espejo en Vivo del Panel de Simulación
     this.renderSimulationMirror(activeProfile);
 
-    // 4. Renderizar Vista Coach
+    // 5. Renderizar Vista Coach (Desktop + App Móvil del Coach)
     this.renderCoachView();
+    this.renderMobileCoachView();
+  }
+
+  /**
+   * Renderiza el banner de receta/intervención del Coach en la Vista Cliente (Idea C)
+   */
+  renderStudentCoachPrescription(profile) {
+    const banner = document.getElementById('student-coach-prescription-banner');
+    const titleEl = document.getElementById('coach-rx-title');
+    const timeEl = document.getElementById('coach-rx-time');
+    const msgEl = document.getElementById('coach-rx-message');
+    const rxDot = document.getElementById('phone-student-alert-dot');
+
+    if (!banner) return;
+
+    if (profile.coachPrescription) {
+      banner.style.display = 'block';
+      if (titleEl) titleEl.textContent = profile.coachPrescription.title;
+      if (timeEl) timeEl.textContent = profile.coachPrescription.timestamp || 'ahora';
+      if (msgEl) msgEl.textContent = profile.coachPrescription.message;
+      if (rxDot) rxDot.style.display = 'inline-block';
+    } else {
+      banner.style.display = 'none';
+      if (rxDot) rxDot.style.display = 'none';
+    }
   }
 
   /**
@@ -3088,6 +3458,15 @@ class AppController {
         btnQuickMinima.addEventListener('click', () => {
           this.runScenarioSimulation('lack_of_time');
         });
+      }
+
+      if (d.preferMinima || plan.preferMinima) {
+        minimaBtn.classList.add('active');
+        idealBtn.classList.remove('active');
+        card.classList.add('minima-mode-active');
+        minimaBlock.style.display = 'block';
+        idealBlock.style.display = 'none';
+        if (durPill) durPill.textContent = `⏱️ ${d.minima.duracionMin} min`;
       }
 
       grid.appendChild(card);
@@ -3461,6 +3840,304 @@ class AppController {
           </table>
         `;
       }
+    }
+  }
+
+  /**
+   * Renderiza la App Móvil Nativa del Coach dentro del Celular (Idea A + Idea B + Idea C + Idea D)
+   */
+  renderMobileCoachView() {
+    const profiles = AppState.getProfiles();
+    if (!profiles || profiles.length === 0) return;
+
+    let verdeCount = 0;
+    let amarilloCount = 0;
+    let rojoCount = 0;
+    let sumSalvataje = 0;
+    let sumMttr = 0;
+
+    profiles.forEach((p) => {
+      if (p.alertaRiesgo === 'rojo') rojoCount++;
+      else if (p.alertaRiesgo === 'amarillo') amarilloCount++;
+      else verdeCount++;
+      sumSalvataje += (p.tasaSalvatajeMinima || 0);
+      sumMttr += (p.mttrDias || 1.0);
+    });
+
+    const avgSalvataje = Math.round(sumSalvataje / profiles.length);
+    const avgMttr = (sumMttr / profiles.length).toFixed(1);
+
+    // Actualizar globo de alerta en el switch superior (Idea A)
+    const alertBadge = document.getElementById('phone-coach-alert-badge');
+    if (alertBadge) {
+      const badgeVal = Math.max(rojoCount, this.coachUnreadAlerts);
+      if (badgeVal > 0 && this.currentPhoneMode !== 'coach') {
+        alertBadge.style.display = 'inline-flex';
+        alertBadge.textContent = String(badgeVal);
+      } else if (rojoCount > 0) {
+        alertBadge.style.display = 'inline-flex';
+        alertBadge.textContent = String(rojoCount);
+      } else {
+        alertBadge.style.display = 'none';
+      }
+    }
+
+    const headerSub = document.getElementById('phone-coach-header-sub');
+    if (headerSub) {
+      headerSub.textContent = `${profiles.length} Alumnos • 🔴 ${rojoCount} Crítico • 🟡 ${amarilloCount} Medio`;
+    }
+
+    // 1. Pestaña Móvil Coach 1: Semáforo de Prioridades (Tarjetas Verticales)
+    const kpiTotal = document.getElementById('mcoach-kpi-total');
+    const kpiSem = document.getElementById('mcoach-kpi-semaforo');
+    const kpiSal = document.getElementById('mcoach-kpi-salvataje');
+    const kpiMttr = document.getElementById('mcoach-kpi-mttr');
+    if (kpiTotal) kpiTotal.textContent = String(profiles.length);
+    if (kpiSem) kpiSem.textContent = `🔴${rojoCount} 🟡${amarilloCount} 🟢${verdeCount}`;
+    if (kpiSal) kpiSal.textContent = `${avgSalvataje}%`;
+    if (kpiMttr) kpiMttr.textContent = `${avgMttr}d`;
+
+    const cardsContainer = document.getElementById('coach-mobile-cohort-cards');
+    if (cardsContainer) {
+      cardsContainer.innerHTML = '';
+      const orderWeight = { rojo: 0, amarillo: 1, verde: 2 };
+      const sorted = profiles.slice().sort((a, b) => (orderWeight[a.alertaRiesgo] ?? 2) - (orderWeight[b.alertaRiesgo] ?? 2));
+
+      sorted.forEach((p) => {
+        const card = document.createElement('div');
+        const r = p.alertaRiesgo || 'verde';
+        card.className = `coach-student-mobile-card risk-${r}`;
+        const badgeHtml = r === 'rojo'
+          ? '<span class="badge badge-risk-rojo">🔴 Crítico</span>'
+          : (r === 'amarillo' ? '<span class="badge badge-risk-amarillo">🟡 Atención</span>' : '<span class="badge badge-risk-verde">🟢 Óptimo</span>');
+
+        const topBarrier = p.barrerasFrecuentes?.[0]?.name || 'Sin fricción crítica';
+
+        card.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.45rem; margin-bottom: 0.45rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.45rem;">${p.avatar || '👤'}</span>
+              <div>
+                <div style="font-size: 0.85rem; font-weight: 800; color: var(--text-primary);">${p.nombre}</div>
+                <div style="font-size: 0.68rem; color: var(--text-secondary);">${p.arquetipo || 'General'}</div>
+              </div>
+            </div>
+            ${badgeHtml}
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; background: var(--bg-deep); padding: 0.4rem 0.5rem; border-radius: 8px; margin-bottom: 0.45rem; font-size: 0.7rem;">
+            <div><span style="color: var(--text-muted);">Adh:</span> <strong style="color: var(--lime-bright);">${p.scoreAdherencia}%</strong></div>
+            <div><span style="color: var(--text-muted);">Mínima:</span> <strong style="color: var(--amber-light);">${p.tasaSalvatajeMinima}%</strong></div>
+            <div><span style="color: var(--text-muted);">MTTR:</span> <strong>${p.mttrDias}d</strong></div>
+          </div>
+
+          <div style="font-size: 0.68rem; color: var(--text-secondary); margin-bottom: 0.55rem;">
+            🔍 <strong>Barrera principal:</strong> ${topBarrier}
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
+            <button type="button" class="btn btn-secondary btn-sm btn-mcard-open-dossier" style="font-size: 0.7rem; padding: 0.35rem 0.5rem;">
+              👤 Ficha 360° &amp; Recetar
+            </button>
+            <button type="button" class="btn btn-cyan btn-sm btn-mcard-quick-nudge" style="font-size: 0.7rem; padding: 0.35rem 0.5rem;">
+              📲 Enviar Rescate
+            </button>
+          </div>
+        `;
+
+        const btnDossier = card.querySelector('.btn-mcard-open-dossier');
+        if (btnDossier) {
+          btnDossier.addEventListener('click', () => {
+            this.inspectedCoachStudentId = p.id;
+            this.switchMobileCoachTab('dossier');
+          });
+        }
+
+        const btnNudge = card.querySelector('.btn-mcard-quick-nudge');
+        if (btnNudge) {
+          btnNudge.addEventListener('click', () => {
+            this.inspectedCoachStudentId = p.id;
+            AppState.applyCoachIntervention(p.id, 'empathetic_nudge');
+            AppState.setActiveProfile(p.id);
+            this.showPhonePushNotification({
+              icon: '💬',
+              sender: 'MENSAJE DIRECTO DEL COACH',
+              title: `Rescate enviado a ${p.nombre.split(' ')[0]}`,
+              text: 'Se activó el recordatorio de Versión Mínima (15m) sin culpa en su teléfono.',
+              theme: 'cyan-theme'
+            });
+            this.showToast(`📲 Rescate enviado a ${p.nombre}`);
+          });
+        }
+
+        cardsContainer.appendChild(card);
+      });
+    }
+
+    // 2. Pestaña Móvil Coach 2: Ficha 360° + Píldoras de Alumno
+    const inspected = AppState.getProfileById(this.inspectedCoachStudentId) || profiles[0];
+    const pillsBar = document.getElementById('coach-mobile-student-pills');
+    if (pillsBar) {
+      pillsBar.innerHTML = '';
+      profiles.forEach((p) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `coach-student-pill-btn ${p.id === inspected.id ? 'active' : ''}`;
+        const shortName = p.nombre.split(' ')[0];
+        const dot = p.alertaRiesgo === 'rojo' ? '🔴' : (p.alertaRiesgo === 'amarillo' ? '🟡' : '🟢');
+        btn.innerHTML = `<span>${p.avatar || '👤'} ${dot}</span><span>${shortName}</span>`;
+        btn.addEventListener('click', () => {
+          this.inspectedCoachStudentId = p.id;
+          this.renderMobileCoachView();
+        });
+        pillsBar.appendChild(btn);
+      });
+    }
+
+    if (inspected) {
+      const dAvatar = document.getElementById('mcoach-dossier-avatar');
+      const dName = document.getElementById('mcoach-dossier-name');
+      const dArch = document.getElementById('mcoach-dossier-arch');
+      const dRisk = document.getElementById('mcoach-dossier-risk');
+      const dAdh = document.getElementById('mcoach-dossier-adh');
+      const dIdeales = document.getElementById('mcoach-dossier-ideales');
+      const dMinimas = document.getElementById('mcoach-dossier-minimas');
+      const dMissed = document.getElementById('mcoach-dossier-missed');
+      const dHypo = document.getElementById('mcoach-dossier-hypothesis');
+
+      if (dAvatar) dAvatar.textContent = inspected.avatar || '👤';
+      if (dName) dName.textContent = inspected.nombre;
+      if (dArch) dArch.textContent = `${inspected.arquetipo || 'General'} • ${inspected.frecuenciaObjetivo || 3}d/sem`;
+      if (dRisk) {
+        const r = inspected.alertaRiesgo || 'verde';
+        dRisk.className = `badge badge-risk-${r}`;
+        dRisk.textContent = r === 'rojo' ? '🔴 Crítico' : (r === 'amarillo' ? '🟡 Medio' : '🟢 Bajo');
+      }
+      if (dAdh) dAdh.textContent = `${inspected.scoreAdherencia}%`;
+      if (dIdeales) dIdeales.textContent = String(inspected.idealCount ?? 0);
+      if (dMinimas) dMinimas.textContent = String(inspected.minimaCount ?? 0);
+      if (dMissed) dMissed.textContent = String(inspected.missedCount ?? 0);
+      if (dHypo) dHypo.textContent = inspected.hipotesis || 'Sin hipótesis activa.';
+
+      // 3. Pestaña Móvil Coach 3: Guion 1-a-1 Interactivo con Checkboxes
+      const tpStudentLbl = document.getElementById('mcoach-talking-student-label');
+      const tpChecklist = document.getElementById('mcoach-talking-checklist');
+      const tpProgress = document.getElementById('mcoach-talking-progress');
+      const savedNotesEl = document.getElementById('mcoach-saved-notes-list');
+
+      if (tpStudentLbl) {
+        tpStudentLbl.textContent = `${inspected.avatar || '👤'} Alumno en sesión: ${inspected.nombre} (${inspected.arquetipo})`;
+      }
+
+      if (tpChecklist) {
+        tpChecklist.innerHTML = '';
+        const tps = RulesEngine.generateInterviewTalkingPoints(inspected);
+        if (!this.checkedTalkingPoints[inspected.id]) {
+          this.checkedTalkingPoints[inspected.id] = {};
+        }
+        const checkedMap = this.checkedTalkingPoints[inspected.id];
+
+        tps.forEach((tp, idx) => {
+          const isChecked = Boolean(checkedMap[idx]);
+          const item = document.createElement('label');
+          item.className = `mcoach-check-item ${isChecked ? 'checked' : ''}`;
+          item.innerHTML = `
+            <input type="checkbox" ${isChecked ? 'checked' : ''}>
+            <div style="flex: 1;">
+              <div style="font-size: 0.65rem; font-weight: 800; color: var(--cyan-primary); text-transform: uppercase;">${tp.categoria}</div>
+              <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-primary); margin: 0.1rem 0;">${tp.tema}</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.3;">${tp.sugerenciaCoach}</div>
+            </div>
+          `;
+          const cb = item.querySelector('input[type="checkbox"]');
+          cb.addEventListener('change', (e) => {
+            checkedMap[idx] = e.target.checked;
+            this.renderMobileCoachView();
+          });
+          tpChecklist.appendChild(item);
+        });
+
+        const doneCount = Object.values(checkedMap).filter(Boolean).length;
+        if (tpProgress) {
+          tpProgress.textContent = `${doneCount} / ${tps.length} hablados`;
+        }
+      }
+
+      if (savedNotesEl) {
+        const notes = inspected.notasCoach || [];
+        if (notes.length === 0) {
+          savedNotesEl.innerHTML = '';
+        } else {
+          savedNotesEl.innerHTML = notes.map((n) => `
+            <div style="background: var(--bg-deep); border-left: 3px solid var(--lime-bright); padding: 0.45rem 0.65rem; border-radius: 6px; margin-bottom: 0.35rem; font-size: 0.72rem;">
+              <strong style="color: var(--lime-bright);">✅ Acuerdo (${n.fecha}):</strong> ${n.texto}
+            </div>
+          `).join('');
+        }
+      }
+    }
+
+    // 4. Pestaña Móvil Coach 4: Turnos 1-a-1 y Feed de Eventos
+    const interviewsListEl = document.getElementById('mcoach-interviews-mobile-list');
+    if (interviewsListEl) {
+      const reqs = AppState.getInterviewRequests();
+      if (reqs.length === 0) {
+        interviewsListEl.innerHTML = '<div style="font-size: 0.76rem; color: var(--text-muted);">No hay turnos solicitados aún.</div>';
+      } else {
+        interviewsListEl.innerHTML = '';
+        reqs.slice().reverse().forEach((req) => {
+          const card = document.createElement('div');
+          card.style.cssText = 'background: var(--bg-deep); border: 1px solid var(--border-card); border-radius: 10px; padding: 0.65rem 0.75rem;';
+          const isConfirmedCoach = req.status === 'confirmada_coach';
+          card.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem;">
+              <strong style="font-size: 0.8rem; color: var(--text-primary);">${req.alumnoNombre}</strong>
+              <span class="badge ${isConfirmedCoach ? 'badge-risk-verde' : 'badge-cyan'}" style="font-size: 0.62rem;">
+                ${isConfirmedCoach ? '✅ Confirmado al Alumno' : `📅 ${req.fecha} • ${req.hora} hs`}
+              </span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.45rem;">
+              "${req.notas || 'Revisión de adherencia y Plan Dual'}"
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;">
+              <span style="font-size: 0.65rem; color: var(--amber-light);">Barrera: ${req.resumenTelemetrico?.topBarrera || 'General'}</span>
+              ${!isConfirmedCoach ? `<button type="button" class="btn btn-primary btn-sm btn-confirm-req" style="font-size: 0.66rem; padding: 0.25rem 0.55rem;">✅ Confirmar y Avisar</button>` : ''}
+            </div>
+          `;
+          const btnConfirm = card.querySelector('.btn-confirm-req');
+          if (btnConfirm) {
+            btnConfirm.addEventListener('click', () => {
+              AppState.confirmInterviewRequest(req.id);
+              this.showToast(`📅 Turno confirmado y notificado a ${req.alumnoNombre}`);
+            });
+          }
+          interviewsListEl.appendChild(card);
+        });
+      }
+    }
+
+    const feedEl = document.getElementById('mcoach-recent-events-feed');
+    if (feedEl) {
+      const allEvents = [];
+      profiles.forEach((p) => {
+        const lastChk = (p.historialCheckins || []).slice(-1)[0];
+        if (lastChk) {
+          allEvents.push({ profile: p, chk: lastChk });
+        }
+      });
+      feedEl.innerHTML = allEvents.map(({ profile: p, chk }) => {
+        const icon = chk.estado === 'ideal' ? '🟢' : (chk.estado === 'minima' ? '🛡️' : '🔴');
+        const label = chk.estado === 'ideal' ? 'Rutina Ideal completada' : (chk.estado === 'minima' ? 'Salvó sesión con Versión Mínima' : 'Faltó a sesión (Alerta)');
+        return `
+          <div style="background: var(--bg-deep); border: 1px solid var(--border-card); border-radius: 10px; padding: 0.55rem 0.7rem; font-size: 0.73rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.15rem;">
+              <strong>${icon} ${p.nombre}</strong>
+              <span style="color: var(--text-muted); font-size: 0.65rem;">${chk.fecha}</span>
+            </div>
+            <div style="color: var(--text-secondary);">${label} (${chk.tiempoRealMin || 0} min)</div>
+          </div>
+        `;
+      }).join('');
     }
   }
 }

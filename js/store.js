@@ -457,6 +457,101 @@ export class AppStateStore {
   }
 
   /**
+   * Aplica una intervención directa del Coach sobre el plan o estado del Alumno (Coach -> Cliente)
+   */
+  applyCoachIntervention(profileId, actionType, customNote = '') {
+    const targetId = profileId || this.activeProfileId;
+    const profile = this.profiles.find((p) => p.id === targetId);
+    if (!profile) throw new Error(`Perfil ${targetId} no encontrado`);
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (actionType === 'minima_week') {
+      profile.coachPrescription = {
+        type: 'minima_week',
+        title: '🛡️ Semana de Descarga Activada por tu Coach',
+        message: customNote || 'Tu Coach activó el Modo Versión Mínima (15-20 min) como meta principal de esta semana para proteger tu continuidad sin sobrecarga.',
+        timestamp: timeStr
+      };
+      if (profile.planSemanal && Array.isArray(profile.planSemanal.dias)) {
+        profile.planSemanal.preferMinima = true;
+        profile.planSemanal.dias = profile.planSemanal.dias.map((day) => ({
+          ...day,
+          preferMinima: true
+        }));
+      }
+    } else if (actionType === 'calibrate_2d') {
+      profile.frecuenciaObjetivo = 2;
+      profile.planSemanal = RulesEngine.buildDefaultPlan(2);
+      profile.coachPrescription = {
+        type: 'calibrate_2d',
+        title: '🎯 Plan Recalibrado a 2 Días Blindados por tu Coach',
+        message: customNote || 'Tu Coach ajustó tu frecuencia semanal a 2 sesiones clave para garantizar un piso sostenible del 100% en semanas intensas.',
+        timestamp: timeStr
+      };
+    } else {
+      profile.coachPrescription = {
+        type: 'empathetic_nudge',
+        title: '💬 Mensaje Directo de tu Coach 1-a-1',
+        message: customNote || `¡Hola ${profile.nombre.split(' ')[0]}! Vi que esta semana estuvo pesada. Hoy con 15 minutos en Versión Mínima salvamos el 100% de tu racha. Cero culpa 💪.`,
+        timestamp: timeStr
+      };
+    }
+
+    this.saveToStorage();
+    this.notifyListeners('coach-intervention-applied', {
+      profileId: targetId,
+      actionType,
+      prescription: profile.coachPrescription
+    });
+    return this.getProfileById(targetId);
+  }
+
+  /**
+   * Guarda una nota clínica de seguimiento 1-a-1 desde la app móvil del Coach
+   */
+  saveCoachSessionNote(profileId, noteText, checkedCount = 0) {
+    const targetId = profileId || this.activeProfileId;
+    const profile = this.profiles.find((p) => p.id === targetId);
+    if (!profile) throw new Error(`Perfil ${targetId} no encontrado`);
+
+    if (!Array.isArray(profile.notasCoach)) {
+      profile.notasCoach = [];
+    }
+    const entry = {
+      id: `note_${Date.now()}`,
+      fecha: new Date().toISOString().split('T')[0],
+      texto: noteText,
+      puntosAbordados: checkedCount
+    };
+    profile.notasCoach.unshift(entry);
+    this.saveToStorage();
+    this.notifyListeners('coach-note-saved', { profileId: targetId, entry });
+    return entry;
+  }
+
+  /**
+   * Confirma o marca como prioritaria una sesión 1-a-1 desde la vista móvil del Coach
+   */
+  confirmInterviewRequest(requestId) {
+    const req = this.interviewRequests.find((r) => r.id === requestId);
+    if (!req) return null;
+    req.status = 'confirmada_coach';
+    const profile = this.profiles.find((p) => p.id === req.profileId);
+    if (profile) {
+      profile.coachPrescription = {
+        type: 'interview_confirmed',
+        title: '📅 Turno 1-a-1 Confirmado por tu Coach',
+        message: `Tu sesión 1-a-1 del ${req.fecha} a las ${req.hora} hs fue confirmada con tu ficha conductual lista.`,
+        timestamp: 'ahora'
+      };
+    }
+    this.saveToStorage();
+    this.notifyListeners('interview-confirmed', { request: req });
+    return req;
+  }
+
+  /**
    * Restaura el dataset demo de los 4 perfiles arquetípicos a su estado de fábrica
    */
   resetDemoData() {

@@ -105,7 +105,95 @@
             <button type="button" id="btn-close-push" class="push-banner-close" aria-label="Cerrar notificación">✕</button>
           </div>
 
-          <!-- Cabecera Nativa dentro de la App Celular -->
+          <!-- IDEA A: SWITCH PERSISTENTE DE ROL NATIVO EN CELULAR (VISTA CLIENTE vs VISTA COACH MÓVIL) -->
+          <div class="phone-role-mode-bar phone-only-chrome" role="tablist" aria-label="Cambiar entre Vista Cliente y Vista Coach en el celular">
+            <div class="phone-role-segmented">
+              <button type="button" id="btn-phone-mode-student" class="phone-role-seg-btn active" data-phone-mode="student" role="tab" aria-selected="true">
+                <span>🏋️‍♂️</span>
+                <span>Vista Cliente</span>
+                <span id="phone-student-alert-dot" class="student-rx-dot" style="display: none;"></span>
+              </button>
+              <button type="button" id="btn-phone-mode-coach" class="phone-role-seg-btn" data-phone-mode="coach" role="tab" aria-selected="false">
+                <span>📋</span>
+                <span>Vista Coach</span>
+                <span id="phone-coach-alert-badge" class="coach-notif-badge">1</span>
+              </button>
+            </div>
+            <button type="button" id="btn-open-role-launcher" class="btn-role-launcher-trigger" title="Abrir selector rápido de Rol, Perfiles y Simulaciones">
+              🎭 Demo
+            </button>
+          </div>
+
+          <!-- IDEA D: MODAL / SHEET DE BIENVENIDA Y CAMBIO DE ROL ("MODO PRESENTACIÓN ENTREVISTA") -->
+          <div id="role-launcher-modal" class="role-launcher-overlay phone-only-chrome" style="display: none;">
+            <div class="role-launcher-sheet">
+              <div class="launcher-sheet-header">
+                <div>
+                  <div class="launcher-sheet-kicker">⚡ SIMULADOR DUAL MÓVIL</div>
+                  <h3 class="launcher-sheet-title">¿Con qué vista querés probar la App?</h3>
+                </div>
+                <button type="button" id="btn-close-role-launcher" class="push-banner-close" aria-label="Cerrar selector">✕</button>
+              </div>
+
+              <div class="launcher-section-label">1. ENTRAR COMO CLIENTE (ALUMNO EN EL GIMNASIO):</div>
+              <div class="launcher-profiles-grid">
+                <button type="button" class="launcher-profile-card" data-launch-student="alumno_martin">
+                  <span class="launcher-avatar">👨‍💼</span>
+                  <div>
+                    <div class="launcher-name">Martín Rossi</div>
+                    <div class="launcher-arch">Todo o Nada • 🟡 Medio</div>
+                  </div>
+                </button>
+                <button type="button" class="launcher-profile-card" data-launch-student="alumno_lucia">
+                  <span class="launcher-avatar">👩‍💻</span>
+                  <div>
+                    <div class="launcher-name">Lucía Méndez</div>
+                    <div class="launcher-arch">Fatiga Mental • 🟢 Bajo</div>
+                  </div>
+                </button>
+                <button type="button" class="launcher-profile-card" data-launch-student="alumno_carlos">
+                  <span class="launcher-avatar">👨‍⚕️</span>
+                  <div>
+                    <div class="launcher-name">Carlos Gómez</div>
+                    <div class="launcher-arch">Turnos Caóticos • 🔴 Crítico</div>
+                  </div>
+                </button>
+                <button type="button" class="launcher-profile-card" data-launch-student="alumno_sofia">
+                  <span class="launcher-avatar">👩‍🎓</span>
+                  <div>
+                    <div class="launcher-name">Sofía Pereira</div>
+                    <div class="launcher-arch">Nuevo Ingreso • 🟢 Bajo</div>
+                  </div>
+                </button>
+              </div>
+
+              <div class="launcher-section-label">2. ENTRAR COMO ENTRENADOR (APP MÓVIL DEL COACH):</div>
+              <button type="button" id="btn-launcher-enter-coach" class="launcher-coach-hero-btn">
+                <span style="font-size: 1.45rem;">📋</span>
+                <div style="flex: 1; text-align: left;">
+                  <div style="font-weight: 800; font-size: 0.85rem; color: var(--text-primary);">Abrir App Móvil del Coach</div>
+                  <div style="font-size: 0.72rem; color: var(--cyan-primary);">Semáforo de cohorte, Ficha 360°, Guion 1-a-1 y Turnos</div>
+                </div>
+                <span class="badge badge-risk-rojo">🔴 1 Alerta</span>
+              </button>
+
+              <div class="launcher-section-label">3. DISPARAR ESCENARIO EN VIVO (1 TOQUE):</div>
+              <div class="drawer-chips-row">
+                <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="lack_of_time">⏰ Salí tarde (18m)</button>
+                <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="low_energy">🔋 Baja energía (2m)</button>
+                <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="missed_guilt">🔴 Falté hoy</button>
+                <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="completed_ideal">🟢 Rutina Ideal</button>
+                <button type="button" id="btn-launcher-reset-demo" class="drawer-sim-chip">↺ Reiniciar Todo</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================================================================
+               SUB-APP MÓVIL 1: VISTA CLIENTE / ALUMNO
+               ====================================================================== -->
+          <div id="phone-student-app-wrapper" class="phone-subapp-wrapper active">
+
+          <!-- Cabecera Nativa dentro de la App Celular (Cliente) -->
           <div class="phone-app-topbar phone-only-chrome">
             <div class="phone-user-info">
               <div id="phone-header-avatar" class="phone-user-avatar">👨‍💼</div>
@@ -140,7 +228,7 @@
               <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="low_energy">🔋 Baja energía (2m)</button>
               <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="missed_guilt">🔴 Falté hoy</button>
               <button type="button" class="drawer-sim-chip sim-scenario-btn" data-sim="completed_ideal">🟢 Rutina Ideal</button>
-              <button type="button" id="btn-phone-switch-to-coach" class="drawer-sim-chip cyan">📋 Panel Coach</button>
+              <button type="button" id="btn-phone-switch-to-coach" class="drawer-sim-chip cyan">📋 Ir a Vista Coach</button>
               <button type="button" id="btn-phone-reset-demo" class="drawer-sim-chip">↺ Reset</button>
             </div>
           </div>
@@ -171,6 +259,19 @@
 
           <!-- Cuerpo desplazable dentro de la pantalla del celular -->
           <div class="phone-scroll-body" id="phone-viewport-scroll">
+
+            <!-- IDEA C: BANNER EN VIVO DE RECETA / INTERVENCIÓN DEL COACH EN LA VISTA CLIENTE -->
+            <div id="student-coach-prescription-banner" class="coach-rx-banner" style="display: none;">
+              <div class="coach-rx-header">
+                <span id="coach-rx-title" class="coach-rx-title">✨ Ajuste en Vivo de tu Coach</span>
+                <span id="coach-rx-time" class="coach-rx-time">ahora</span>
+              </div>
+              <p id="coach-rx-message" class="coach-rx-text"></p>
+              <div class="coach-rx-actions">
+                <button type="button" id="btn-rx-open-plan" class="btn btn-primary btn-sm">📅 Ver mi Plan Dual</button>
+                <button type="button" id="btn-rx-dismiss" class="btn btn-secondary btn-sm">Entendido</button>
+              </div>
+            </div>
 
       <!-- TAB 1: ONBOARDING Y EVALUACIÓN INICIAL -->
       <section id="tab-student-onboarding" class="student-tab-content">
@@ -724,6 +825,215 @@
               <span>Progreso</span>
             </button>
           </nav>
+
+          </div><!-- /#phone-student-app-wrapper -->
+
+          <!-- ======================================================================
+               SUB-APP MÓVIL 2: VISTA COACH NATIVA EN CELULAR (IDEA B + IDEA C)
+               ====================================================================== -->
+          <div id="phone-coach-app-wrapper" class="phone-subapp-wrapper phone-only-chrome" style="display: none;">
+
+            <!-- Cabecera Móvil del Entrenador -->
+            <div class="phone-app-topbar coach-topbar-theme">
+              <div class="phone-user-info">
+                <div class="phone-user-avatar" style="border-color: var(--cyan-primary);">🧢</div>
+                <div>
+                  <div class="phone-user-name">Coach Entrenhábitos</div>
+                  <div id="phone-coach-header-sub" class="phone-user-archetype" style="color: var(--cyan-primary);">4 Alumnos • 🔴 1 Prioridad</div>
+                </div>
+              </div>
+              <button type="button" id="btn-coach-mobile-back-student" class="btn-phone-drawer-toggle" title="Cambiar a la vista del alumno seleccionado">
+                👁️ Ver como Cliente
+              </button>
+            </div>
+
+            <!-- Cuerpo desplazable de la App Móvil del Coach -->
+            <div class="phone-scroll-body" id="phone-coach-viewport-scroll">
+
+              <!-- PESTAÑA COACH MÓVIL 1: SEMÁFORO DE PRIORIDADES (COHORTE EN TARJETAS VERTICALES) -->
+              <section id="tab-coach-mobile-cohort" class="coach-mobile-tab-content">
+                <div class="coach-mobile-kpi-strip">
+                  <div class="coach-mini-kpi">
+                    <span class="coach-mini-kpi-val" id="mcoach-kpi-total">4</span>
+                    <span class="coach-mini-kpi-lbl">Activos</span>
+                  </div>
+                  <div class="coach-mini-kpi">
+                    <span class="coach-mini-kpi-val" id="mcoach-kpi-semaforo" style="font-size: 0.82rem;">🔴1 🟡1 🟢2</span>
+                    <span class="coach-mini-kpi-lbl">Semáforo</span>
+                  </div>
+                  <div class="coach-mini-kpi">
+                    <span class="coach-mini-kpi-val amber" id="mcoach-kpi-salvataje">32%</span>
+                    <span class="coach-mini-kpi-lbl">Salvataje</span>
+                  </div>
+                  <div class="coach-mini-kpi">
+                    <span class="coach-mini-kpi-val" id="mcoach-kpi-mttr">1.8d</span>
+                    <span class="coach-mini-kpi-lbl">MTTR</span>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+                  <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">🚨 Alumnos por Prioridad de Riesgo</span>
+                  <span class="badge badge-cyan" style="font-size: 0.65rem;">Toque para intervenir</span>
+                </div>
+
+                <div id="coach-mobile-cohort-cards" class="coach-mobile-cards-stack">
+                  <!-- Tarjetas móviles renderizadas desde app.js -->
+                </div>
+              </section>
+
+              <!-- PESTAÑA COACH MÓVIL 2: FICHA 360° + INTERVENCIONES COACH -> CLIENTE (IDEA C) -->
+              <section id="tab-coach-mobile-dossier" class="coach-mobile-tab-content" style="display: none;">
+                <!-- Selector táctil de alumno para el Coach -->
+                <div id="coach-mobile-student-pills" class="coach-student-pills-bar">
+                  <!-- Píldoras de selección rápida de alumno -->
+                </div>
+
+                <!-- Tarjeta de Resumen 360° del Alumno -->
+                <div class="card" style="padding: 0.9rem !important; margin-bottom: 0.75rem !important;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.65rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                      <div id="mcoach-dossier-avatar" style="font-size: 1.8rem;">👨‍💼</div>
+                      <div>
+                        <h3 id="mcoach-dossier-name" style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin: 0;">Martín Rossi</h3>
+                        <p id="mcoach-dossier-arch" style="font-size: 0.72rem; color: var(--lime-bright); margin: 0;">Perfeccionista / Todo o Nada</p>
+                      </div>
+                    </div>
+                    <span id="mcoach-dossier-risk" class="badge badge-risk-amarillo">🟡 Medio</span>
+                  </div>
+
+                  <div class="coach-mobile-kpi-strip" style="margin-bottom: 0.65rem;">
+                    <div class="coach-mini-kpi">
+                      <span class="coach-mini-kpi-val" id="mcoach-dossier-adh">82%</span>
+                      <span class="coach-mini-kpi-lbl">Adherencia</span>
+                    </div>
+                    <div class="coach-mini-kpi">
+                      <span class="coach-mini-kpi-val" id="mcoach-dossier-ideales">2</span>
+                      <span class="coach-mini-kpi-lbl">Ideales</span>
+                    </div>
+                    <div class="coach-mini-kpi">
+                      <span class="coach-mini-kpi-val amber" id="mcoach-dossier-minimas">2</span>
+                      <span class="coach-mini-kpi-lbl">Mínimas</span>
+                    </div>
+                    <div class="coach-mini-kpi">
+                      <span class="coach-mini-kpi-val coral" id="mcoach-dossier-missed">1</span>
+                      <span class="coach-mini-kpi-lbl">Faltas</span>
+                    </div>
+                  </div>
+
+                  <div class="hypothesis-box" style="padding: 0.7rem; margin-bottom: 0;">
+                    <div class="hypothesis-title" style="font-size: 0.72rem;">🔬 Hipótesis Activa y Barrera Dominante</div>
+                    <p id="mcoach-dossier-hypothesis" class="hypothesis-text" style="font-size: 0.76rem; margin-bottom: 0;"></p>
+                  </div>
+                </div>
+
+                <!-- IDEA C: PANEL DE INTERVENCIÓN DIRECTA DEL COACH AL CELULAR DEL ALUMNO -->
+                <div class="card coach-intervention-card" style="padding: 0.9rem !important;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <h4 style="font-size: 0.82rem; font-weight: 800; color: var(--cyan-primary); margin: 0;">⚡ Intervenir sobre el Celular del Cliente</h4>
+                    <span class="badge badge-cyan" style="font-size: 0.62rem;">Impacto en Vivo</span>
+                  </div>
+                  <p style="font-size: 0.73rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                    Dispará un ajuste o rescate ahora mismo. Al cambiar a <strong>🏋️‍♂️ Vista Cliente</strong> verás el cambio aplicado en el teléfono del alumno.
+                  </p>
+
+                  <div class="coach-action-stack">
+                    <button type="button" id="btn-mcoach-action-nudge" class="coach-action-btn cyan">
+                      <span class="coach-action-icon">📲</span>
+                      <div>
+                        <div class="coach-action-title">Enviar Mensaje Empático de Rescate</div>
+                        <div class="coach-action-desc">Dispara notificación Push sin culpa para activar 15 min hoy</div>
+                      </div>
+                    </button>
+
+                    <button type="button" id="btn-mcoach-action-minima-week" class="coach-action-btn amber">
+                      <span class="coach-action-icon">🛡️</span>
+                      <div>
+                        <div class="coach-action-title">Recetar "Semana de Descarga" (Modo Mínimo)</div>
+                        <div class="coach-action-desc">Pasa el Plan Dual del alumno a Versión Mínima (15-20m) esta semana</div>
+                      </div>
+                    </button>
+
+                    <button type="button" id="btn-mcoach-action-calibrate-2d" class="coach-action-btn lime">
+                      <span class="coach-action-icon">🎯</span>
+                      <div>
+                        <div class="coach-action-title">Calibrar Piso a 2 Días Blindados / Semana</div>
+                        <div class="coach-action-desc">Ajusta la frecuencia objetivo del alumno a 2 sesiones sostenibles</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- PESTAÑA COACH MÓVIL 3: GUION 1-A-1 INTERACTIVO CON CHECKLIST -->
+              <section id="tab-coach-mobile-talking" class="coach-mobile-tab-content" style="display: none;">
+                <div class="card" style="padding: 0.9rem !important;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.45rem;">
+                    <h3 style="font-size: 0.92rem; font-weight: 800; color: var(--text-primary); margin: 0;">🎯 Guion para Sesión 1-a-1</h3>
+                    <span id="mcoach-talking-progress" class="badge badge-cyan">0 / 3 hablados</span>
+                  </div>
+                  <p id="mcoach-talking-student-label" style="font-size: 0.75rem; color: var(--lime-bright); font-weight: 700; margin-bottom: 0.75rem;">
+                    Alumno: Martín Rossi
+                  </p>
+
+                  <div id="mcoach-talking-checklist" class="mcoach-checklist-stack">
+                    <!-- Puntos de conversación con checkboxes interactivos -->
+                  </div>
+
+                  <form id="mcoach-note-form" style="margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px solid var(--border-card);">
+                    <label class="form-label" for="mcoach-session-note-input" style="font-size: 0.74rem;">📝 Acuerdo o nota rápida de la entrevista:</label>
+                    <input type="text" id="mcoach-session-note-input" class="form-input" style="font-size: 0.78rem; padding: 0.5rem 0.65rem; margin-bottom: 0.5rem;" placeholder="Ej: Acordamos usar Versión Mínima martes y jueves...">
+                    <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">
+                      💾 Guardar Acuerdo en Ficha del Alumno
+                    </button>
+                  </form>
+
+                  <div id="mcoach-saved-notes-list" style="margin-top: 0.65rem;"></div>
+                </div>
+              </section>
+
+              <!-- PESTAÑA COACH MÓVIL 4: TURNOS 1-A-1 Y FEED DE ALERTAS -->
+              <section id="tab-coach-mobile-agenda" class="coach-mobile-tab-content" style="display: none;">
+                <div class="card" style="padding: 0.9rem !important; margin-bottom: 0.75rem !important;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+                    <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--text-primary); margin: 0;">📅 Turnos 1-a-1 Solicitados</h3>
+                    <span class="badge badge-cyan" style="font-size: 0.65rem;">Con Telemetría</span>
+                  </div>
+                  <div id="mcoach-interviews-mobile-list" class="coach-mobile-cards-stack">
+                    <!-- Tarjetas de turnos agendados -->
+                  </div>
+                </div>
+
+                <div class="card" style="padding: 0.9rem !important;">
+                  <h3 style="font-size: 0.85rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.55rem;">🔔 Últimos Eventos Conductuales de la Cohorte</h3>
+                  <div id="mcoach-recent-events-feed" class="coach-mobile-cards-stack">
+                    <!-- Feed de últimos check-ins y alertas -->
+                  </div>
+                </div>
+              </section>
+
+            </div><!-- /#phone-coach-viewport-scroll -->
+
+            <!-- Barra de Navegación Inferior Nativa de la Vista Coach Móvil (4 Pestañas) -->
+            <nav class="phone-bottom-nav coach-bottom-nav-theme" aria-label="Navegación app móvil coach">
+              <button type="button" class="phone-coach-nav-item active" data-coach-tab="cohort">
+                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                <span>Semáforo</span>
+              </button>
+              <button type="button" class="phone-coach-nav-item" data-coach-tab="dossier">
+                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>Ficha 360°</span>
+              </button>
+              <button type="button" class="phone-coach-nav-item" data-coach-tab="talking">
+                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                <span>Guion 1-a-1</span>
+              </button>
+              <button type="button" class="phone-coach-nav-item" data-coach-tab="agenda">
+                <svg class="nav-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Turnos</span>
+              </button>
+            </nav>
+
+          </div><!-- /#phone-coach-app-wrapper -->
 
           <!-- Indicador Home de iPhone / Android -->
           <div class="phone-home-indicator phone-only-chrome">

@@ -1,4 +1,4 @@
-package com.entrenhabitos.prototipo;
+package com.entrenhabitos.app;
 
 import android.app.Activity;
 import android.graphics.Color;
