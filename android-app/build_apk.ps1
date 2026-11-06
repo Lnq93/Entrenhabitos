@@ -19,20 +19,13 @@ $D8 = Join-Path $BuildTools "d8.bat"
 $Zipalign = Join-Path $BuildTools "zipalign.exe"
 $Apksigner = Join-Path $BuildTools "apksigner.bat"
 
-Write-Host "1. Regenerando js/bundle.js..." -ForegroundColor Cyan
-node "C:\Users\lauta\.gemini\antigravity\brain\178093e3-653a-4dfe-a195-e0cd3c2e37ed\scratch\build_bundle.mjs"
+Write-Host "1. Regenerando js/bundle.js y android-app/assets/index.html autocontenido..." -ForegroundColor Cyan
+node (Join-Path $AndroidDir "prepare_assets.mjs")
 
-Write-Host "2. Preparando directorios de compilación y assets..." -ForegroundColor Cyan
+Write-Host "2. Preparando directorios de compilación..." -ForegroundColor Cyan
 if (Test-Path $BuildDir) { Remove-Item $BuildDir -Recurse -Force }
-if (Test-Path $AssetsDir) { Remove-Item $AssetsDir -Recurse -Force }
 
 New-Item -ItemType Directory -Path "$BuildDir\gen", "$BuildDir\obj", "$BuildDir\dex" -Force | Out-Null
-New-Item -ItemType Directory -Path "$AssetsDir\css", "$AssetsDir\js" -Force | Out-Null
-
-Copy-Item (Join-Path $RootDir "index.html") (Join-Path $AssetsDir "index.html") -Force
-Copy-Item (Join-Path $RootDir "manifest.webmanifest") (Join-Path $AssetsDir "manifest.webmanifest") -Force
-Copy-Item (Join-Path $RootDir "css\styles.css") (Join-Path $AssetsDir "css\styles.css") -Force
-Copy-Item (Join-Path $RootDir "js\bundle.js") (Join-Path $AssetsDir "js\bundle.js") -Force
 
 Write-Host "3. Compilando recursos con aapt2..." -ForegroundColor Cyan
 & $Aapt2 compile --dir (Join-Path $AndroidDir "res") -o "$BuildDir\resources.zip"

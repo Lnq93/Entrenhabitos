@@ -1978,6 +1978,24 @@ class AppController {
     if (typeof window !== 'undefined' && (window.location.search.includes('platform=android_apk') || window.ENTRENHABITOS_ANDROID_APK)) {
       document.body.classList.add('native-android-apk');
     }
+    if (typeof window !== 'undefined') {
+      window.handleAndroidBackButton = () => {
+        const inlineDrawer = document.getElementById('phone-inline-sim-drawer');
+        if (inlineDrawer && inlineDrawer.style.display !== 'none') {
+          inlineDrawer.style.display = 'none';
+          return 'CONSUMED';
+        }
+        if (this.currentRole !== 'mobile') {
+          this.switchRole('mobile');
+          return 'CONSUMED';
+        }
+        if (this.currentStudentTab !== 'onboarding') {
+          this.switchStudentTab('onboarding');
+          return 'CONSUMED';
+        }
+        return 'EXIT';
+      };
+    }
     this.bindEvents();
     this.startCheckinTimer();
     this.switchRole('mobile');
@@ -2066,6 +2084,8 @@ class AppController {
     simBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         const simType = btn.getAttribute('data-sim');
+        const inlineDrawer = document.getElementById('phone-inline-sim-drawer');
+        if (inlineDrawer) inlineDrawer.style.display = 'none';
         this.runScenarioSimulation(simType);
       });
     });
@@ -2088,7 +2108,8 @@ class AppController {
           AppState.setActiveProfile(inspected.id);
         }
         if (this.currentRole === 'coach') {
-          this.switchRole('split');
+          const isMobileOrApk = document.body.classList.contains('native-android-apk') || window.innerWidth <= 640;
+          this.switchRole(isMobileOrApk ? 'mobile' : 'split');
         }
         this.showPhonePushNotification({
           icon: '💬',
@@ -2116,9 +2137,17 @@ class AppController {
       inlineProfileSelect.addEventListener('change', (e) => {
         AppState.setActiveProfile(e.target.value);
         this.inspectedCoachStudentId = e.target.value;
+        if (inlineSimDrawer) inlineSimDrawer.style.display = 'none';
         this.triggerSkeletonShimmer('#phone-viewport-scroll');
         const active = AppState.getActiveProfile();
         this.showToast(`Perfil activo: ${active.nombre}`);
+        this.showPhonePushNotification({
+          icon: active.avatar || '👤',
+          sender: 'ENTRENHÁBITOS • PERFIL SINCRONIZADO',
+          title: `Hola ${active.nombre.split(' ')[0]}`,
+          text: `Arquetipo activo: ${active.arquetipo}. Tu Plan Dual está listo.`,
+          theme: 'cyan-theme'
+        });
       });
     }
 

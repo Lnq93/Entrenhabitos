@@ -2365,14 +2365,19 @@ body.mode-split .phone-scroll-body .progress-visual-grid {
 }
 
 .mobile-coach-return-bar {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: space-between;
-  background: rgba(9, 13, 22, 0.92);
+  background: rgba(9, 13, 22, 0.96);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--cyan-primary);
   border-radius: var(--radius-md);
   padding: 0.65rem 1rem;
   margin-bottom: 1rem;
+  position: sticky;
+  top: 0.5rem;
+  z-index: 50;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
 }
 
 /* Cuando corre dentro del APK de Android o en un celular físico (<= 640px) */
@@ -2380,8 +2385,20 @@ body.native-android-apk .app-header,
 body.native-android-apk .app-footer,
 body.native-android-apk .phone-status-bar,
 body.native-android-apk .phone-home-indicator,
+body.native-android-apk .student-subnav,
 body.native-android-apk .simulation-side-panel {
   display: none !important;
+}
+
+body.native-android-apk .mobile-coach-return-bar {
+  display: flex !important;
+}
+
+body.native-android-apk.mode-mobile {
+  height: 100% !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 body.native-android-apk .main-container {
@@ -2392,20 +2409,66 @@ body.native-android-apk .main-container {
 
 body.native-android-apk .phone-frame-wrapper {
   max-width: none !important;
-  width: 100vw !important;
+  width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   position: static !important;
+  background: transparent !important;
 }
 
-body.native-android-apk .phone-screen-inner {
-  height: 100dvh !important;
-  max-height: 100dvh !important;
+body.native-android-apk.mode-mobile .phone-screen-inner {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
   border-radius: 0 !important;
   border: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: var(--bg-primary) !important;
+  z-index: 10 !important;
+}
+
+body.native-android-apk.mode-mobile .phone-app-topbar,
+body.native-android-apk.mode-mobile .phone-inline-drawer,
+body.native-android-apk.mode-mobile .phone-bottom-nav {
+  flex-shrink: 0 !important;
+}
+
+body.native-android-apk.mode-mobile .phone-scroll-body {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 0.85rem 0.85rem 1.25rem !important;
+}
+
+body.native-android-apk.mode-mobile .phone-bottom-nav {
+  padding: 0.45rem 0.25rem 0.55rem !important;
+  background: #090d16 !important;
+  border-top: 1px solid var(--border-card) !important;
+}
+
+body.native-android-apk .phone-push-banner {
+  top: 58px !important;
+}
+
+body.native-android-apk .toast-container {
+  bottom: 4.35rem !important;
+  left: 0.75rem !important;
+  right: 0.75rem !important;
+}
+
+body.native-android-apk .toast {
+  font-size: 0.78rem !important;
+  padding: 0.6rem 0.85rem !important;
 }
 
 body.native-android-apk #view-coach {
@@ -2417,8 +2480,13 @@ body.native-android-apk #view-coach {
   .app-footer,
   .phone-status-bar,
   .phone-home-indicator,
+  .student-subnav,
   .simulation-side-panel {
     display: none !important;
+  }
+
+  .mobile-coach-return-bar {
+    display: flex !important;
   }
 
   .main-container {
@@ -2430,21 +2498,49 @@ body.native-android-apk #view-coach {
   body.mode-mobile .phone-frame-wrapper,
   body.mode-split .phone-frame-wrapper {
     max-width: none !important;
-    width: 100vw !important;
+    width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     position: static !important;
+    background: transparent !important;
   }
 
   body.mode-mobile .phone-screen-inner,
   body.mode-split .phone-screen-inner {
-    height: 100dvh !important;
-    max-height: 100dvh !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
     border-radius: 0 !important;
     border: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 10 !important;
+  }
+
+  body.mode-mobile .phone-scroll-body,
+  body.mode-split .phone-scroll-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .phone-push-banner {
+    top: 58px !important;
+  }
+
+  .toast-container {
+    bottom: 4.35rem !important;
+    left: 0.75rem !important;
+    right: 0.75rem !important;
   }
 
   #view-coach {

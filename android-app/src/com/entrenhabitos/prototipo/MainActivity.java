@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
         settings.setDatabaseEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
-        settings.setLoadWithOverviewMode(true);
+        settings.setLoadWithOverviewMode(false);
         settings.setUseWideViewPort(true);
         settings.setTextZoom(100);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -57,13 +57,24 @@ public class MainActivity extends Activity {
         ));
 
         setContentView(root);
-        webView.loadUrl("file:///android_asset/index.html?platform=android_apk");
+        webView.loadUrl("file:///android_asset/index.html");
     }
 
     @Override
     public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
+        if (webView != null) {
+            webView.evaluateJavascript(
+                    "(window.handleAndroidBackButton && window.handleAndroidBackButton()) || 'EXIT'",
+                    value -> {
+                        if (value == null || value.contains("EXIT")) {
+                            if (webView.canGoBack()) {
+                                webView.goBack();
+                            } else {
+                                MainActivity.super.onBackPressed();
+                            }
+                        }
+                    }
+            );
         } else {
             super.onBackPressed();
         }
