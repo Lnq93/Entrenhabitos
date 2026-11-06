@@ -31,7 +31,9 @@ c:\Users\lauta\Proyectos\PROYECTO ENTRENHABITOS\
 │   ├── R2_SRS_REQUERIMIENTOS_Y_MODELADO.md          # [R2] Ingeniería de Requerimientos SRS IEEE/ISO (1.138 líneas)
 │   ├── R3_DIRECCION_DE_PROYECTO_Y_ROADMAP.md        # [R3] Plan Director de Proyecto, WBS, Riesgos y KPIs (738 líneas)
 │   ├── R5_ELICITACION_Y_DESCUBRIMIENTO_PRODUCTO.md  # [R5] Cuestionario de Elicitación con el Cliente + Matriz de Decisiones e Ideas
-│   └── R6_ARQUITECTURA_TECNICA_REACT_SQL.md         # [R6] Arquitectura de Producción: JS, React, React Native + Base de Datos SQL
+│   ├── R6_ARQUITECTURA_TECNICA_REACT_SQL.md         # [R6] Arquitectura de Producción: JS, React, React Native + Base de Datos SQL
+│   └── R7_GUION_ENTREVISTA_CLIENTE_PROTOTIPO.md     # [R7] Guion de Entrevista con Lic. Mariano Cáceres (@entrenhabitos) + Validación Prototipo v2.2
+├── Entrenhabitos-Prototipo.apk                      # Aplicativo Nativo Android (v2.2.0 - Vista Cliente + Vista Coach Móvil)
 ├── index.html                                       # [R4] Prototipo Web Interactivo (Vista Alumno + Vista Coach)
 ├── css\
 │   └── styles.css                                   # Sistema de diseño "Athletic Precision" (Dark Slate, Lima, Ámbar, Coral)
@@ -73,6 +75,10 @@ c:\Users\lauta\Proyectos\PROYECTO ENTRENHABITOS\
 5. **[`docs/R6_ARQUITECTURA_TECNICA_REACT_SQL.md`](docs/R6_ARQUITECTURA_TECNICA_REACT_SQL.md) — Arquitectura Técnica de Producción: JavaScript, React / React Native y Base de Datos SQL (R6)**
    - **Arquitectura Full-Stack JavaScript (Monorepo):** App Móvil para el Alumno en **React Native + Expo**, Panel Profesional para el Entrenador en **React.js Web**, y paquete compartido `@entrenhabitos/core` reutilizando `rules_engine.js`.
    - **Diseño del Modelo Relacional SQL (PostgreSQL):** Diagrama Entidad-Relación (DER), script DDL completo de las 9 tablas transaccionales y analíticas (`usuarios`, `perfiles_adherencia`, `planes_semanales`, `sesiones_plan_dual`, `checkins_adherencia`, `intervenciones_aplicadas`, `pesos_intervenciones_usuario`, `entrevistas_1a1`) y consultas SQL analíticas para el Panel del Coach.
+
+6. **[`docs/R7_GUION_ENTREVISTA_CLIENTE_PROTOTIPO.md`](docs/R7_GUION_ENTREVISTA_CLIENTE_PROTOTIPO.md) — Guion de Entrevista con el Cliente y Validación del Prototipo Móvil Dual (R7)**
+   - **Triangulación Estratégica:** Cruce entre el `Borrador Marca Personal Entrenhábitos.pdf`, el perfil real del **Lic. Mariano David Cáceres (`@entrenhabitos` — Neuropsicólogo & Personal Trainer)** y el prototipo móvil dual `v2.2.0` (`🏋️‍♂️ Vista Cliente` + `📋 Vista Coach Móvil`).
+   - **20 Preguntas Guiadas Pantalla por Pantalla** para recorrer el prototipo en vivo durante la entrevista y **5 Propuestas Diferenciadoras** inspiradas en su marca personal (*Cápsulas de Neuro-Rescate en Audio/Video de 45s*, *Intención de Implementación y Gestión del Tiempo*, *Modo Época de Exámenes/Estrés*, *Acuerdo Quincenal Fijado* y *Paleta Cobalt & Gold*).
 
 ---
 
